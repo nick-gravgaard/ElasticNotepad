@@ -61,25 +61,20 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   def stretchTabstops(doc: StyledDocument, fontMetrics: FontMetrics) {
     val section = doc.getDefaultRootElement
-    val lineCount = section.getElementCount
-    val nofTabsPerLine = Array.fill(lineCount){ 0 }
-    val cellsPerLine = Array.fill(lineCount){ new ListBuffer[Cell] }
+    val cellsPerLine = Array.fill(section.getElementCount){ new ListBuffer[Cell] }
 
     for ((cellsThisLine, l) <- cellsPerLine.zipWithIndex) {
       val line = section.getElement(l)
-
       val lineText = doc.getText(line.getStartOffset, line.getEndOffset - line.getStartOffset)
       var textWidthInTab = 0
-      for (c <- 0 until lineText.length) {
-        val currentChar = lineText.charAt(c)
-        if (currentChar == '\n') {
+      for (char <- lineText) {
+        if (char == '\n') {
           textWidthInTab = 0
-        } else if (currentChar == '\t') {
+        } else if (char == '\t') {
           cellsThisLine += new Cell(textWidthPix = calcTabWidth(textWidthInTab))
-          nofTabsPerLine(l) += 1
           textWidthInTab = 0
         } else {
-          textWidthInTab += fontMetrics.charWidth(currentChar)
+          textWidthInTab += fontMetrics.charWidth(char)
         }
       }
     }
