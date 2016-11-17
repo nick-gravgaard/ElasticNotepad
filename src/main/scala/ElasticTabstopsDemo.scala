@@ -8,8 +8,6 @@ import javax.swing.UIManager
 import java.awt.{Font, FontMetrics}
 import javax.swing.text._
 
-import scala.collection.mutable.ListBuffer
-
 class Cell(var textWidthPix: Int = 0, var widestWidthPix: Int = 0)
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
@@ -59,25 +57,14 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
   val TabMinimumWidth = 32
   val TabPaddingWidth = 8
 
-  def stretchTabstops(doc: StyledDocument, fontMetrics: FontMetrics) {
+  def stretchTabstops(doc: StyledDocument, fm: FontMetrics) {
     val section = doc.getDefaultRootElement
-    val cellsPerLine = Array.fill(section.getElementCount){ new ListBuffer[Cell] }
 
-    for ((cellsThisLine, l) <- cellsPerLine.zipWithIndex) {
-      val line = section.getElement(l)
+    def getLinesCells(line: Element): Array[Cell] = {
       val lineText = doc.getText(line.getStartOffset, line.getEndOffset - line.getStartOffset)
-      var textWidthInTab = 0
-      for (char <- lineText) {
-        if (char == '\n') {
-          textWidthInTab = 0
-        } else if (char == '\t') {
-          cellsThisLine += new Cell(textWidthPix = calcTabWidth(textWidthInTab))
-          textWidthInTab = 0
-        } else {
-          textWidthInTab += fontMetrics.charWidth(char)
-        }
-      }
+      for (cellText <- lineText.split('\t').dropRight(1)) yield new Cell(textWidthPix = calcTabWidth(fm.stringWidth(cellText)))
     }
+    val cellsPerLine = for (l <- 0 until section.getElementCount) yield getLinesCells(section.getElement(l))
 
     val maxTabstops = (for (l <- cellsPerLine) yield l.length).max
 
@@ -111,7 +98,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     math.max(textWidthInTab, TabMinimumWidth) + TabPaddingWidth
   }
 
-  def setBlocksTabstops(doc: StyledDocument, start: Int, length: Int, tabstopPositions: ListBuffer[Cell]) {
+  def setBlocksTabstops(doc: StyledDocument, start: Int, length: Int, tabstopPositions: Array[Cell]) {
     val tabs = for (tabstopPosition <- tabstopPositions) yield new TabStop(tabstopPosition.textWidthPix)
     val tabSet = new TabSet(tabs.toArray)
     val attributes = new SimpleAttributeSet()
