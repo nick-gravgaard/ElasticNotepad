@@ -8,7 +8,7 @@ import javax.swing.UIManager
 import java.awt.{Font, FontMetrics}
 import javax.swing.text._
 
-class Cell(var textWidthPix: Int = 0, var widestWidthPix: Int = 0)
+class Cell(var contents: String = "", var width: Int = 0)
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
   val initialText = StringContext.treatEscapes(
@@ -62,7 +62,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
     def getLinesCells(line: Element): Array[Cell] = {
       val lineText = doc.getText(line.getStartOffset, line.getEndOffset - line.getStartOffset)
-      for (cellText <- lineText.split('\t').dropRight(1)) yield new Cell(textWidthPix = calcTabWidth(fm.stringWidth(cellText)))
+      for (cellText <- lineText.split('\t')) yield new Cell(contents = cellText)
     }
     val cellsPerLine = for (l <- 0 until section.getElementCount) yield getLinesCells(section.getElement(l))
 
@@ -72,23 +72,23 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       var maxWidth = 0
       var blockLineStart = 0
       for ((cellsThisLine, l) <- cellsPerLine.zipWithIndex) {
-        if (t < cellsThisLine.length) {
-          maxWidth = math.max(cellsThisLine(t).textWidthPix, maxWidth)
+        if (t < cellsThisLine.length - 1) {
+          maxWidth = math.max(calcTabWidth(fm.stringWidth(cellsThisLine(t).contents)), maxWidth)
         } else {
-          for (l2 <- blockLineStart until l if t < cellsPerLine(l2).length) cellsPerLine(l2)(t).widestWidthPix = maxWidth
+          for (l2 <- blockLineStart until l if t < cellsPerLine(l2).length) cellsPerLine(l2)(t).width = maxWidth
           blockLineStart = l
           maxWidth = 0
         }
       }
-      for (l2 <- blockLineStart until cellsPerLine.length if t < cellsPerLine(l2).length) cellsPerLine(l2)(t).widestWidthPix = maxWidth
+      for (l2 <- blockLineStart until cellsPerLine.length if t < cellsPerLine(l2).length) cellsPerLine(l2)(t).width = maxWidth
     }
 
     for ((cellsThisLine, l) <- cellsPerLine.zipWithIndex) {
       val line = section.getElement(l)
       var accTabstop = 0
       for (cell <- cellsThisLine) {
-        accTabstop += cell.widestWidthPix
-        cell.textWidthPix = accTabstop
+        accTabstop += cell.width
+        cell.width = accTabstop
       }
       setBlocksTabstops(doc, line.getStartOffset, line.getEndOffset, cellsThisLine)
     }
@@ -99,7 +99,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
   }
 
   def setBlocksTabstops(doc: StyledDocument, start: Int, length: Int, tabstopPositions: Array[Cell]) {
-    val tabs = for (tabstopPosition <- tabstopPositions) yield new TabStop(tabstopPosition.textWidthPix)
+    val tabs = for (tabstopPosition <- tabstopPositions) yield new TabStop(tabstopPosition.width)
     val tabSet = new TabSet(tabs.toArray)
     val attributes = new SimpleAttributeSet()
     StyleConstants.setTabSet(attributes, tabSet)
