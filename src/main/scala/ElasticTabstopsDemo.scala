@@ -66,24 +66,20 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
     val cellsPerLine = for (l <- 0 until section.getElementCount) yield getLinesCells(section.getElement(l))
 
-    val maxTabstops = (for (l <- cellsPerLine) yield l.length).max
-
-    for (t <- 0 until maxTabstops) {
-      var maxWidth = 0
-      var blockLineStart = 0
-      for ((cellsThisLine, l) <- cellsPerLine.zipWithIndex) {
-        if (t < cellsThisLine.length - 1) {
-          maxWidth = math.max(calcTabWidth(fm.stringWidth(cellsThisLine(t).contents)), maxWidth)
-        } else {
-          for (l2 <- blockLineStart until l if t < cellsPerLine(l2).length) cellsPerLine(l2)(t).width = maxWidth
-          blockLineStart = l
-          maxWidth = 0
+    for ((cellsThisLine, l) <- cellsPerLine.view.zipWithIndex) {
+      for (t <- cellsThisLine.indices.dropRight(1)) {
+        if (l == 0 || t >= cellsPerLine(l - 1).length - 1) {  // first cell in column block
+          var i = -1
+          var maxWidth = calcTabWidth(0)
+          while ({i += 1; l + i < cellsPerLine.length && t < cellsPerLine(l + i).length - 1})
+            maxWidth = math.max(calcTabWidth(fm.stringWidth(cellsPerLine(l + i)(t).contents)), maxWidth)
+          for (j <- 0 until i)
+            cellsPerLine(l + j)(t).width = maxWidth
         }
       }
-      for (l2 <- blockLineStart until cellsPerLine.length if t < cellsPerLine(l2).length) cellsPerLine(l2)(t).width = maxWidth
     }
 
-    for ((cellsThisLine, l) <- cellsPerLine.zipWithIndex) {
+    for ((cellsThisLine, l) <- cellsPerLine.view.zipWithIndex) {
       val line = section.getElement(l)
       var accTabstop = 0
       for (cell <- cellsThisLine) {
