@@ -67,14 +67,13 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     val cellsPerLine = for (l <- 0 until section.getElementCount) yield getLinesCells(section.getElement(l))
 
     for ((cellsThisLine, l) <- cellsPerLine.view.zipWithIndex) {
-      for (t <- cellsThisLine.indices.dropRight(1)) {
-        if (l == 0 || t >= cellsPerLine(l - 1).length - 1) {  // first cell in column block
-          var i = -1
-          var maxWidth = calcTabWidth(0)
-          while ({i += 1; l + i < cellsPerLine.length && t < cellsPerLine(l + i).length - 1})
-            maxWidth = math.max(calcTabWidth(fm.stringWidth(cellsPerLine(l + i)(t).contents)), maxWidth)
-          for (j <- 0 until i)
-            cellsPerLine(l + j)(t).width = maxWidth
+      for (c <- cellsThisLine.indices.dropRight(1)) {
+        if (l == 0 || c >= cellsPerLine(l - 1).length - 1) {  // is there no matching cell on the previous line?
+          // first cell in column block - get max cell width and set for cells in column block
+          val columnBlock = for (line <- cellsPerLine.drop(l).takeWhile(c < _.length - 1)) yield line(c)
+          val maxWidth = (for (cell <- columnBlock) yield calcTabWidth(fm.stringWidth(cell.contents))).max
+          for (cell <- columnBlock)
+            cell.width = maxWidth
         }
       }
     }
