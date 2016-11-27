@@ -134,9 +134,6 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       peer.setText(initialText)
     }
 
-    val styledDoc = textPane.styledDocument
-    val doc = styledDoc.asInstanceOf[AbstractDocument]
-
     contents = new ScrollPane(textPane)
   }
 }
