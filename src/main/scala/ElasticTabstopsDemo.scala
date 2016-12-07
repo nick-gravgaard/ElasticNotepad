@@ -66,14 +66,26 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
     val cellsPerLine = for (l <- 0 until section.getElementCount) yield getLinesCells(section.getElement(l))
 
-    for ((cellsThisLine, l) <- cellsPerLine.view.zipWithIndex) {
-      for (c <- cellsThisLine.indices.dropRight(1)) {
-        if (l == 0 || c >= cellsPerLine(l - 1).length - 1) {  // is there no matching cell on the previous line?
-          // first cell in column block - get max cell width and set for cells in column block
-          val columnBlock = for (line <- cellsPerLine.drop(l).takeWhile(c < _.length - 1)) yield line(c)
-          val maxWidth = (for (cell <- columnBlock) yield calcTabWidth(fm.stringWidth(cell.contents))).max
-          for (cell <- columnBlock)
-            cell.width = maxWidth
+    val maxCells = (for (l <- cellsPerLine) yield l.length).max
+
+    def groupSome[T](list: List[Option[T]]) : List[List[T]] = list match {
+      // scala> groupSome(List(Some(1), Some(2), Some(3), None, Some(4), Some(5), Some(6), None, None, Some(7), Some(8), Some(9)))
+      // res1: List[List[Int]] = List(List(1, 2, 3), List(4, 5, 6), List(7, 8, 9))
+      case Nil => Nil
+      case h::t => h match {
+        case None => groupSome(list drop 1)
+        case Some(cell) => val segment = list takeWhile {h => h.isDefined} map {_.get}
+          segment :: groupSome(list drop segment.length)
+      }
+    }
+
+    for (c <- 0 until maxCells) {
+      var column = for (cellsThisLine <- cellsPerLine) yield if (c < cellsThisLine.indices.last) Some(cellsThisLine(c)) else None
+      var columnBlocks = groupSome(column.toList)
+      for (columnBlock <- columnBlocks) {
+        val maxWidth = (for (cell <- columnBlock) yield calcTabWidth(fm.stringWidth(cell.contents))).max
+        for (cell <- columnBlock) {
+          cell.width = maxWidth
         }
       }
     }
