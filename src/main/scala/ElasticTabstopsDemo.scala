@@ -1,12 +1,8 @@
-import java.awt.Dimension
-
-import swing._
-import javax.swing.text.DocumentFilter.FilterBypass
-import javax.swing.text.{AbstractDocument, AttributeSet, DocumentFilter}
-
+import java.awt.{Dimension, Font, FontMetrics}
 import javax.swing.UIManager
-import java.awt.{Font, FontMetrics}
-import javax.swing.text._
+import javax.swing.text.{AbstractDocument, AttributeSet, DocumentFilter, Element, SimpleAttributeSet, StyleConstants, StyledDocument, TabSet, TabStop}
+import javax.swing.text.DocumentFilter.FilterBypass
+import swing.{MainFrame, ScrollPane, SimpleSwingApplication, TextPane}
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
   val initialText = StringContext.treatEscapes(
