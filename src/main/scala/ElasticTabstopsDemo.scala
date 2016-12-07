@@ -8,8 +8,6 @@ import javax.swing.UIManager
 import java.awt.{Font, FontMetrics}
 import javax.swing.text._
 
-class Cell(var contents: String = "", var width: Int = 0)
-
 object ElasticTabstopsDemo extends SimpleSwingApplication {
   val initialText = StringContext.treatEscapes(
     """/* Hopefully this editor widget should demonstrate how elastic tabstops work.\t*/
@@ -56,6 +54,8 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   val TabMinimumWidth = 32
   val TabPaddingWidth = 8
+
+  class Cell(var contents: String = "", var width: Int = 0)
 
   def stretchTabstops(doc: StyledDocument, fm: FontMetrics) {
     val section = doc.getDefaultRootElement
