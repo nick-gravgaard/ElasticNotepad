@@ -51,49 +51,35 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
   val TabMinimumWidth = 32
   val TabPaddingWidth = 8
 
-  class Cell(var contents: String = "", var width: Int = 0)
-
   def stretchTabstops(doc: StyledDocument, fm: FontMetrics) {
     val section = doc.getDefaultRootElement
+    val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
+    val cellTextsPerLine = for (element <- elements)
+      yield doc.getText(element.getStartOffset, element.getEndOffset - element.getStartOffset).split('\t')
 
-    def getLinesCells(line: Element): Array[Cell] = {
-      val lineText = doc.getText(line.getStartOffset, line.getEndOffset - line.getStartOffset)
-      for (cellText <- lineText.split('\t')) yield new Cell(contents = cellText)
-    }
-    val cellsPerLine = for (l <- 0 until section.getElementCount) yield getLinesCells(section.getElement(l))
+    val maxCells = (for (cellTextsThisLine <- cellTextsPerLine) yield cellTextsThisLine.length).max
 
-    val maxCells = (for (l <- cellsPerLine) yield l.length).max
-
-    def groupSome[T](list: List[Option[T]]) : List[List[T]] = list match {
-      // scala> groupSome(List(Some(1), Some(2), Some(3), None, Some(4), Some(5), Some(6), None, None, Some(7), Some(8), Some(9)))
-      // res1: List[List[Int]] = List(List(1, 2, 3), List(4, 5, 6), List(7, 8, 9))
+    def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
+      // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
+      // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
       case Nil => Nil
       case h::t => h match {
-        case None => groupSome(list drop 1)
-        case Some(cell) => val segment = list takeWhile {h => h.isDefined} map {_.get}
-          segment :: groupSome(list drop segment.length)
-      }
-    }
-
-    for (c <- 0 until maxCells) {
-      var column = for (cellsThisLine <- cellsPerLine) yield if (c < cellsThisLine.indices.last) Some(cellsThisLine(c)) else None
-      var columnBlocks = groupSome(column.toList)
-      for (columnBlock <- columnBlocks) {
-        val maxWidth = (for (cell <- columnBlock) yield calcTabWidth(fm.stringWidth(cell.contents))).max
-        for (cell <- columnBlock) {
-          cell.width = maxWidth
+        case None => None :: maxConsecutive(list.drop(1))
+        case Some(cell) => {
+          val segment = list.takeWhile(_.isDefined).map(_.get)
+          List.fill(segment.length)(Option(segment.max)) ::: maxConsecutive(list.drop(segment.length))
         }
       }
     }
 
-    for ((cellsThisLine, l) <- cellsPerLine.view.zipWithIndex) {
-      val line = section.getElement(l)
-      var accTabstop = 0
-      for (cell <- cellsThisLine) {
-        accTabstop += cell.width
-        cell.width = accTabstop
-      }
-      setBlocksTabstops(doc, line.getStartOffset, line.getEndOffset, cellsThisLine)
+    val cellWidthsPerColumn = for (c <- 0 until maxCells) yield maxConsecutive(
+      for (cellTextsThisLine <- cellTextsPerLine) yield
+        if (c < cellTextsThisLine.indices.last) Option(calcTabWidth(fm.stringWidth(cellTextsThisLine(c)))) else None
+    )
+
+    for ((cellWidthsThisLine, element) <- cellWidthsPerColumn.transpose.zip(elements)) {
+      val tabstopPositionsThisLine = (cellWidthsThisLine.takeWhile(_.isDefined).map(_.get).scanLeft(0)(_ + _).drop(1))
+      setBlocksTabstops(doc, element.getStartOffset, element.getEndOffset, tabstopPositionsThisLine.toArray)
     }
   }
 
@@ -101,8 +87,8 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     math.max(textWidthInTab, TabMinimumWidth) + TabPaddingWidth
   }
 
-  def setBlocksTabstops(doc: StyledDocument, start: Int, length: Int, tabstopPositions: Array[Cell]) {
-    val tabs = for (tabstopPosition <- tabstopPositions) yield new TabStop(tabstopPosition.width)
+  def setBlocksTabstops(doc: StyledDocument, start: Int, length: Int, tabstopPositions: Array[Int]) {
+    val tabs = for (tabstopPosition <- tabstopPositions) yield new TabStop(tabstopPosition)
     val tabSet = new TabSet(tabs.toArray)
     val attributes = new SimpleAttributeSet()
     StyleConstants.setTabSet(attributes, tabSet)
