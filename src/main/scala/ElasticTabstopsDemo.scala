@@ -51,48 +51,48 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
   val CellMinimumWidth = 32
   val CellPaddingWidth = 8
 
+  def calcCellWidth(textWidthInCell: Int): Int = math.max(textWidthInCell, CellMinimumWidth) + CellPaddingWidth
+
+  def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
+    // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
+    // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
+    case Nil => Nil
+    case h::t => h match {
+      case None => None :: maxConsecutive(list.drop(1))
+      case Some(cell) => {
+        val segment = list.takeWhile(_.isDefined).map(_.get)
+        List.fill(segment.length)(Option(segment.max)) ::: maxConsecutive(list.drop(segment.length))
+      }
+    }
+  }
+
+  def calcMaxedWidthsPerLine(textWidthsPerLine: List[Array[Int]]) : List[List[Int]] = {
+    val maxNofCells = (for (textWidthsThisLine <- textWidthsPerLine) yield textWidthsThisLine.length).max
+
+    val maxedWidthsPerColumn = for (c <- 0 until maxNofCells)
+      yield maxConsecutive(for (textWidthsThisLine <- textWidthsPerLine)
+        yield if (c < textWidthsThisLine.indices.last) Option(calcCellWidth(textWidthsThisLine(c))) else None)
+
+    for (maxedWidthsThisLine <- maxedWidthsPerColumn.toList.transpose)
+      yield maxedWidthsThisLine.takeWhile(_.isDefined).map(_.get)
+  }
+
   def alignTabstops(doc: StyledDocument, fm: FontMetrics) {
     val section = doc.getDefaultRootElement
     val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
-    val cellTextsPerLine = for (element <- elements)
-      yield doc.getText(element.getStartOffset, element.getEndOffset - element.getStartOffset).split('\t')
+    val textWidthsPerLine = for (element <- elements)
+      yield for (text <- doc.getText(element.getStartOffset, element.getEndOffset - element.getStartOffset).split('\t'))
+        yield fm.stringWidth(text)
 
-    val maxCells = (for (cellTextsThisLine <- cellTextsPerLine) yield cellTextsThisLine.length).max
+    val maxedWidthsPerLine = calcMaxedWidthsPerLine(textWidthsPerLine)
 
-    def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
-      // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
-      // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
-      case Nil => Nil
-      case h::t => h match {
-        case None => None :: maxConsecutive(list.drop(1))
-        case Some(cell) => {
-          val segment = list.takeWhile(_.isDefined).map(_.get)
-          List.fill(segment.length)(Option(segment.max)) ::: maxConsecutive(list.drop(segment.length))
-        }
-      }
+    for ((maxedWidthsThisLine, element) <- maxedWidthsPerLine.zip(elements)) {
+      val tabstopPositionsThisLine = (maxedWidthsThisLine.scanLeft(0)(_ + _).drop(1))
+      val tabStops = for (tabstopPosition <- tabstopPositionsThisLine) yield new TabStop(tabstopPosition)
+      val attributes = new SimpleAttributeSet()
+      StyleConstants.setTabSet(attributes, new TabSet(tabStops.toArray))
+      doc.setParagraphAttributes(element.getStartOffset, element.getEndOffset, attributes, false)
     }
-
-    val cellWidthsPerColumn = for (c <- 0 until maxCells) yield maxConsecutive(
-      for (cellTextsThisLine <- cellTextsPerLine) yield
-        if (c < cellTextsThisLine.indices.last) Option(calcCellWidth(fm.stringWidth(cellTextsThisLine(c)))) else None
-    )
-
-    for ((cellWidthsThisLine, element) <- cellWidthsPerColumn.transpose.zip(elements)) {
-      val tabstopPositionsThisLine = (cellWidthsThisLine.takeWhile(_.isDefined).map(_.get).scanLeft(0)(_ + _).drop(1))
-      setBlocksTabstops(doc, element.getStartOffset, element.getEndOffset, tabstopPositionsThisLine.toArray)
-    }
-  }
-
-  def calcCellWidth(textWidthInCell: Int): Int = {
-    math.max(textWidthInCell, CellMinimumWidth) + CellPaddingWidth
-  }
-
-  def setBlocksTabstops(doc: StyledDocument, start: Int, length: Int, tabstopPositions: Array[Int]) {
-    val tabs = for (tabstopPosition <- tabstopPositions) yield new TabStop(tabstopPosition)
-    val tabSet = new TabSet(tabs.toArray)
-    val attributes = new SimpleAttributeSet()
-    StyleConstants.setTabSet(attributes, tabSet)
-    doc.setParagraphAttributes(start, length, attributes, false)
   }
 
   def top = new MainFrame {
