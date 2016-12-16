@@ -48,10 +48,10 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       |The Selfish Gene\tRichard Dawkins\tOxford University Press\t2006""".stripMargin
   )
 
-  val TabMinimumWidth = 32
-  val TabPaddingWidth = 8
+  val CellMinimumWidth = 32
+  val CellPaddingWidth = 8
 
-  def stretchTabstops(doc: StyledDocument, fm: FontMetrics) {
+  def alignTabstops(doc: StyledDocument, fm: FontMetrics) {
     val section = doc.getDefaultRootElement
     val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
     val cellTextsPerLine = for (element <- elements)
@@ -74,7 +74,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
     val cellWidthsPerColumn = for (c <- 0 until maxCells) yield maxConsecutive(
       for (cellTextsThisLine <- cellTextsPerLine) yield
-        if (c < cellTextsThisLine.indices.last) Option(calcTabWidth(fm.stringWidth(cellTextsThisLine(c)))) else None
+        if (c < cellTextsThisLine.indices.last) Option(calcCellWidth(fm.stringWidth(cellTextsThisLine(c)))) else None
     )
 
     for ((cellWidthsThisLine, element) <- cellWidthsPerColumn.transpose.zip(elements)) {
@@ -83,8 +83,8 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
   }
 
-  def calcTabWidth(textWidthInTab: Int): Int = {
-    math.max(textWidthInTab, TabMinimumWidth) + TabPaddingWidth
+  def calcCellWidth(textWidthInCell: Int): Int = {
+    math.max(textWidthInCell, CellMinimumWidth) + CellPaddingWidth
   }
 
   def setBlocksTabstops(doc: StyledDocument, start: Int, length: Int, tabstopPositions: Array[Int]) {
@@ -108,19 +108,19 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
         override def insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet) {
           super.insertString(fb, offs, str, a)
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
-          stretchTabstops(doc, fontMetrics)
+          alignTabstops(doc, fontMetrics)
         }
 
         override def remove(fb: FilterBypass, offs: Int, length: Int) {
           super.remove(fb, offs, length)
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
-          stretchTabstops(doc, fontMetrics)
+          alignTabstops(doc, fontMetrics)
         }
 
         override def replace(fb: FilterBypass, offs: Int, length: Int, str: String, a: AttributeSet) {
           super.replace(fb, offs, length, str, a)
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
-          stretchTabstops(doc, fontMetrics)
+          alignTabstops(doc, fontMetrics)
         }
       }
 
