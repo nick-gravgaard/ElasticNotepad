@@ -1,7 +1,5 @@
 package object core {
 
-  def calcCellWidth(textWidth: Int, minimum: Int, padding: Int): Int = math.max(textWidth, minimum) + padding
-
   def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
     // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
     // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
@@ -15,15 +13,25 @@ package object core {
     }
   }
 
-  def calcMaxedWidthsPerLine(textWidthsPerLine: List[Array[Int]], minimum: Int, padding: Int) : List[List[Int]] = {
+  def calcMaxedWidthsPerLine(textWidthsPerLine: List[Array[Int]]) : List[List[Int]] = {
     val maxNofCells = (for (textWidthsThisLine <- textWidthsPerLine) yield textWidthsThisLine.length).max
 
     val maxedWidthsPerColumn = for (c <- 0 until maxNofCells)
       yield maxConsecutive(for (textWidthsThisLine <- textWidthsPerLine)
         yield if (c < textWidthsThisLine.indices.last)
-          Option(calcCellWidth(textWidthsThisLine(c), minimum, padding)) else None)
+          Option(textWidthsThisLine(c)) else None)
 
     for (maxedWidthsThisLine <- maxedWidthsPerColumn.toList.transpose)
       yield maxedWidthsThisLine.takeWhile(_.isDefined).map(_.get)
   }
+
+  def calcTabstopPositions(textPerLine: List[String], measureText: String => Int): List[List[Int]] = {
+    val textWidthsPerLine = for (textThisLine <- textPerLine)
+      yield for (textThisCell <- textThisLine.split('\t'))
+        yield measureText(textThisCell)
+
+    for (maxedWidthsThisLine <- calcMaxedWidthsPerLine(textWidthsPerLine))
+      yield maxedWidthsThisLine.scanLeft(0)(_ + _).drop(1)
+  }
+
 }

@@ -4,7 +4,7 @@ import javax.swing.text.{AbstractDocument, AttributeSet, DocumentFilter, Element
 import javax.swing.text.DocumentFilter.FilterBypass
 import swing.{MainFrame, ScrollPane, SimpleSwingApplication, TextPane}
 
-import core.calcMaxedWidthsPerLine
+import core.calcTabstopPositions
 import assets.InitialText
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
@@ -15,14 +15,10 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
   def alignTabstops(doc: StyledDocument, fm: FontMetrics) {
     val section = doc.getDefaultRootElement
     val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
-    val textWidthsPerLine = for (element <- elements)
-      yield for (text <- doc.getText(element.getStartOffset, element.getEndOffset - element.getStartOffset).split('\t'))
-        yield fm.stringWidth(text)
 
-    val maxedWidthsPerLine = calcMaxedWidthsPerLine(textWidthsPerLine, CellMinimumWidth, CellPaddingWidth)
-
-    for ((maxedWidthsThisLine, element) <- maxedWidthsPerLine.zip(elements)) {
-      val tabstopPositionsThisLine = (maxedWidthsThisLine.scanLeft(0)(_ + _).drop(1))
+    val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
+    def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), CellMinimumWidth) + CellPaddingWidth
+    for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(textPerLine, calcCellWidth).zip(elements)) {
       val tabStops = for (tabstopPosition <- tabstopPositionsThisLine) yield new TabStop(tabstopPosition)
       val attributes = new SimpleAttributeSet()
       StyleConstants.setTabSet(attributes, new TabSet(tabStops.toArray))
@@ -65,4 +61,5 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
     contents = new ScrollPane(textPane)
   }
+
 }
