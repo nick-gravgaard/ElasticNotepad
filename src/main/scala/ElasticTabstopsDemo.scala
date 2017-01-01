@@ -9,6 +9,8 @@ import assets.InitialText
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
 
+  UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
+
   val CellMinimumWidth = 32
   val CellPaddingWidth = 8
 
@@ -29,7 +31,6 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
   def top = new MainFrame {
     title = "Elastic tabstops demo"
     preferredSize = new Dimension(768, 900)
-    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
 
     val textPane = new TextPane {
       font = new Font("Merriweather", Font.PLAIN, 15)
