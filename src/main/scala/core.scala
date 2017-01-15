@@ -13,7 +13,7 @@ package object core {
     }
   }
 
-  def calcMaxedWidthsPerLine(textWidthsPerLine: List[Array[Int]]) : List[List[Int]] = {
+  def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
     val maxNofCells = (for (textWidthsThisLine <- textWidthsPerLine) yield textWidthsThisLine.length).max
 
     val maxedWidthsPerColumn = for (c <- 0 until maxNofCells)
@@ -25,13 +25,34 @@ package object core {
       yield maxedWidthsThisLine.takeWhile(_.isDefined).map(_.get)
   }
 
-  def calcTabstopPositions(textPerLine: List[String], measureText: String => Int): List[List[Int]] = {
-    val textWidthsPerLine = for (textThisLine <- textPerLine)
-      yield for (textThisCell <- textThisLine.split('\t'))
-        yield measureText(textThisCell)
+  def getCellsPerLine(textPerLine: List[String]): List[List[String]] = {
+    for (textThisLine <- textPerLine) yield textThisLine.split('\t').toList
+  }
 
-    for (maxedWidthsThisLine <- calcMaxedWidthsPerLine(textWidthsPerLine))
+  def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] = {
+    for (cellsThisLine <- cellsPerLine)
+      yield for (textThisCell <- cellsThisLine)
+        yield measureText(textThisCell)
+  }
+
+  def calcTabstopPositions(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] = {
+    val cellWidthsPerLine = measureWidthsPerLine(cellsPerLine, measureText)
+
+    for (maxedWidthsThisLine <- calcMaxedWidthsPerLine(cellWidthsPerLine))
       yield maxedWidthsThisLine.scanLeft(0)(_ + _).drop(1)
+  }
+
+  def toSpaces(text: String, nofIndentSpaces: Int): String = {
+    val cellPaddingWidthSpaces = 2 // must be at least 2 so we can convert back to tabs
+    val cellMinimumWidthSpaces = nofIndentSpaces - cellPaddingWidthSpaces
+    val textPerLine = for (line <- text.split("\n")) yield line
+    val cellsPerLine = getCellsPerLine(textPerLine.toList)
+    def calcCellWidth(text: String): Int = math.max(text.length, cellMinimumWidthSpaces) + cellPaddingWidthSpaces
+    val maxedWidthsPerLine = calcMaxedWidthsPerLine(measureWidthsPerLine(cellsPerLine, calcCellWidth))
+
+    (for ((widthsThisLine, cellsThisLine) <- maxedWidthsPerLine.zip(cellsPerLine))
+      yield (for ((cellText, width) <- cellsThisLine.zip(widthsThisLine :+ 0))
+        yield cellText + (" " * (width - cellText.length))).mkString).mkString("\n")
   }
 
 }

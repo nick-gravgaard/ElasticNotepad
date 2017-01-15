@@ -6,7 +6,7 @@ import scala.swing.{Action, Dialog, MainFrame, Menu, MenuBar, MenuItem, ScrollPa
 import scala.util.Try
 
 import assets.InitialText
-import core.calcTabstopPositions
+import core.{calcTabstopPositions, getCellsPerLine, toSpaces}
 import filehandling.{loadFile, saveFile, saveFileAs}
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
@@ -15,14 +15,16 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   val CellMinimumWidth = 32
   val CellPaddingWidth = 8
+  val NofIndentSpaces = 4
 
-  def alignTabstops(doc: StyledDocument, fm: FontMetrics) {
+  def alignTabstops(doc: StyledDocument, fm: FontMetrics): Unit = {
     val section = doc.getDefaultRootElement
     val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
 
     val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
+    val cellsPerLine = getCellsPerLine(textPerLine)
     def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), CellMinimumWidth) + CellPaddingWidth
-    for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(textPerLine, calcCellWidth).zip(elements)) {
+    for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements)) {
       val tabStops = for (tabstopPosition <- tabstopPositionsThisLine) yield new TabStop(tabstopPosition)
       val attributes = new SimpleAttributeSet()
       StyleConstants.setTabSet(attributes, new TabSet(tabStops.toArray))
@@ -56,7 +58,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     def saveFileAction(): Unit = {
       currentPath match {
         case Some(path) => {
-          saveFile(textPane.text, path)
+          saveFile(toSpaces(textPane.text, NofIndentSpaces), path)
           setWindowTitle(makeWindowTitleText(currentPath, false))
         }
         case None => saveFileAs(textPane.text) foreach { path =>
@@ -67,7 +69,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
 
     def saveFileAsAction(): Unit = {
-      saveFileAs(textPane.text) foreach { path =>
+      saveFileAs(toSpaces(textPane.text, NofIndentSpaces)) foreach { path =>
         currentPath = Some(path)
         setWindowTitle(makeWindowTitleText(currentPath, false))
       }
