@@ -6,6 +6,20 @@ import scala.util.control.NonFatal
 
 package object filehandling {
 
+  def alwaysClose[A <: {def close(): Unit}, B] (closeable: A) (f: A => B): B = {
+    try {
+      f(closeable)
+    } finally {
+      try {
+        closeable.close()
+      } catch {
+        case NonFatal(e) =>
+          println("Error closing resource:")
+          e.printStackTrace
+      }
+    }
+  }
+
   def loadFile(): Option[(String, String)] = {
     val dialog = new FileDialog(null.asInstanceOf[FileDialog], "Load file", FileDialog.LOAD)
     dialog.setVisible(true)
@@ -15,18 +29,13 @@ package object filehandling {
       val path = dialog.getDirectory + dialog.getFile
 
       try {
-        val fileSource = Source.fromFile(path, "UTF-8")
-        try {
+        alwaysClose(Source.fromFile(path, "UTF-8")) { fileSource =>
           return Some((fileSource.getLines.mkString("\n"), path))
-        } catch {
-          case e: IOException => Dialog.showMessage(null, s"Can't load $path\n[${e.getMessage}]")
-          case NonFatal(e) => Dialog.showMessage(null, s"Exception trying to load $path\n[${e.getMessage}]")
-        } finally {
-          fileSource.close
         }
       } catch {
-        case e: FileNotFoundException => Dialog.showMessage(null, s"Can't find $path\n[${e.getMessage}]")
-        case NonFatal(e) => Dialog.showMessage(null, s"Exception trying to find $path\n[${e.getMessage}]")
+        case e: FileNotFoundException => Dialog.showMessage(null, s"Can't find $path\n\n[${e.getMessage}]")
+        case e: IOException => Dialog.showMessage(null, s"Can't load $path\n\n[${e.getMessage}]")
+        case NonFatal(e) => Dialog.showMessage(null, s"Exception trying to load $path\n\n[${e.getMessage}]")
       }
       None
 
@@ -34,15 +43,14 @@ package object filehandling {
   }
 
   def saveFile(text: String, path: String): Boolean = {
-    val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"))
     try {
-      writer.write(text)
-      return true
+      alwaysClose(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"))) { writer =>
+        writer.write(text)
+        return true
+      }
     } catch {
       case e: IOException => Dialog.showMessage(null, s"Can't save $path\n[${e.getMessage}]")
       case NonFatal(e) => Dialog.showMessage(null, s"Exception trying to save $path\n[${e.getMessage}]")
-    } finally {
-      writer.close
     }
     false
   }
