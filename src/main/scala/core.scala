@@ -1,3 +1,5 @@
+import scala.collection.SortedSet
+
 package object core {
 
   def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
@@ -47,4 +49,47 @@ package object core {
         yield cellText + (" " * (width - cellText.length))).mkString).mkString("\n")
   }
 
+  def replaceEmptyRuns(list: List[Option[String]]) : List[Option[String]] = list match {
+    // split into segments separated by None, and replace segments with Nones if they do not contain any text
+    // scala>              replaceEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
+    // res1: List[Option[Option[String]]] = List(Some(""), Some("a"), None, None, None))
+    case Nil => Nil
+    case h::t => h match {
+      case None => None :: replaceEmptyRuns(list.drop(1))
+      case Some(possibleCell) => {
+        val segment = list.takeWhile(_.isDefined)
+        val segmentOrNones = if (segment.forall(_.contains("")))
+          List.fill[Option[String]](segment.length)(None)
+        else
+          segment
+        segmentOrNones ::: replaceEmptyRuns(list.drop(segment.length))
+      }
+    }
+  }
+
+  def spacesToTabs(text: String): String = {
+    // a non-space followed by any number of chars that are either a non-space or a space followed by a non-space
+    val cellTextRegEx = "[^ ](?:[^ ]| (?=[^ ]))*".r
+
+    // get maps for each line containing the position of text and the text itself
+    val matchesPerLine = text.split("\n").map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
+
+    val allPositions = SortedSet(matchesPerLine.map(_.keys).toList.flatten: _*)
+
+    val nofPossCellsPerLine = for (matchesThisLine <- matchesPerLine)
+      yield allPositions.toList.reverse.dropWhile(!matchesThisLine.contains(_)).length
+
+    // for each line, create matched or empty strings at every possible cell position
+    val possCellsPerLine = for (matchesThisLine <- matchesPerLine)
+      yield for (position <- allPositions.toList)
+        yield if (matchesThisLine.contains(position)) matchesThisLine(position) else ""
+
+    // we know that empty strings at the end of the line cannot be cells, so replace them with None
+    val possCellsPerLine2 = (for ((possCellsThisLine, nofPossCellsThisLine) <- possCellsPerLine.zip(nofPossCellsPerLine))
+      yield for ((possibleCell, i) <- possCellsThisLine.zipWithIndex)
+        yield if (i < nofPossCellsThisLine) Some(possibleCell) else None).toList
+
+    // finally, transpose, replace empty columns with Nones, transpose back, remove Nones, and join
+    possCellsPerLine2.transpose.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t")).mkString("\n")
+  }
 }

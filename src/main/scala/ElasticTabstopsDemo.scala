@@ -6,7 +6,7 @@ import scala.swing.{Action, Dialog, MainFrame, Menu, MenuBar, MenuItem, ScrollPa
 import scala.util.Try
 
 import assets.InitialText
-import core.{calcTabstopPositions, tabsToSpaces}
+import core.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import filehandling.{loadFile, saveFile, saveFileAs}
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
@@ -49,7 +49,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
     def loadFileAction(): Unit = {
       loadFile foreach { case (loadedText, path) =>
-        textPane.text = loadedText
+        textPane.text = spacesToTabs(loadedText)
         currentPath = Some(path)
         setWindowTitle(makeWindowTitleText(currentPath, false))
       }
