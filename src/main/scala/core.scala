@@ -14,7 +14,7 @@ package object core {
   }
 
   def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
-    val maxNofCells = (for (textWidthsThisLine <- textWidthsPerLine) yield textWidthsThisLine.length).max
+    val maxNofCells = textWidthsPerLine.map(_.length).max
 
     val maxedWidthsPerColumn = for (c <- 0 until maxNofCells)
       yield maxConsecutive(for (textWidthsThisLine <- textWidthsPerLine)
@@ -25,15 +25,8 @@ package object core {
       yield maxedWidthsThisLine.takeWhile(_.isDefined).map(_.get)
   }
 
-  def getCellsPerLine(textPerLine: List[String]): List[List[String]] = {
-    for (textThisLine <- textPerLine) yield textThisLine.split('\t').toList
-  }
-
-  def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] = {
-    for (cellsThisLine <- cellsPerLine)
-      yield for (textThisCell <- cellsThisLine)
-        yield measureText(textThisCell)
-  }
+  def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] =
+    cellsPerLine.map(_.map(measureText(_)))
 
   def calcTabstopPositions(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] = {
     val cellWidthsPerLine = measureWidthsPerLine(cellsPerLine, measureText)
@@ -42,11 +35,10 @@ package object core {
       yield maxedWidthsThisLine.scanLeft(0)(_ + _).drop(1)
   }
 
-  def toSpaces(text: String, nofIndentSpaces: Int): String = {
+  def tabsToSpaces(text: String, nofIndentSpaces: Int): String = {
     val cellPaddingWidthSpaces = 2 // must be at least 2 so we can convert back to tabs
     val cellMinimumWidthSpaces = nofIndentSpaces - cellPaddingWidthSpaces
-    val textPerLine = for (line <- text.split("\n")) yield line
-    val cellsPerLine = getCellsPerLine(textPerLine.toList)
+    val cellsPerLine = text.split('\n').map(_.split('\t').toList).toList
     def calcCellWidth(text: String): Int = math.max(text.length, cellMinimumWidthSpaces) + cellPaddingWidthSpaces
     val maxedWidthsPerLine = calcMaxedWidthsPerLine(measureWidthsPerLine(cellsPerLine, calcCellWidth))
 

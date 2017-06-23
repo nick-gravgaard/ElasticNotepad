@@ -6,7 +6,7 @@ import scala.swing.{Action, Dialog, MainFrame, Menu, MenuBar, MenuItem, ScrollPa
 import scala.util.Try
 
 import assets.InitialText
-import core.{calcTabstopPositions, getCellsPerLine, toSpaces}
+import core.{calcTabstopPositions, tabsToSpaces}
 import filehandling.{loadFile, saveFile, saveFileAs}
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
@@ -22,10 +22,10 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
 
     val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
-    val cellsPerLine = getCellsPerLine(textPerLine)
+    val cellsPerLine = textPerLine.map(_.split('\t').toList)
     def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), CellMinimumWidth) + CellPaddingWidth
     for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements)) {
-      val tabStops = for (tabstopPosition <- tabstopPositionsThisLine) yield new TabStop(tabstopPosition)
+      val tabStops = tabstopPositionsThisLine.map(new TabStop(_))
       val attributes = new SimpleAttributeSet()
       StyleConstants.setTabSet(attributes, new TabSet(tabStops.toArray))
       doc.setParagraphAttributes(element.getStartOffset, element.getEndOffset, attributes, false)
@@ -58,7 +58,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     def saveFileAction(): Unit = {
       currentPath match {
         case Some(path) => {
-          saveFile(toSpaces(textPane.text, NofIndentSpaces), path)
+          saveFile(tabsToSpaces(textPane.text, NofIndentSpaces), path)
           setWindowTitle(makeWindowTitleText(currentPath, false))
         }
         case None => saveFileAs(textPane.text) foreach { path =>
@@ -69,7 +69,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
 
     def saveFileAsAction(): Unit = {
-      saveFileAs(toSpaces(textPane.text, NofIndentSpaces)) foreach { path =>
+      saveFileAs(tabsToSpaces(textPane.text, NofIndentSpaces)) foreach { path =>
         currentPath = Some(path)
         setWindowTitle(makeWindowTitleText(currentPath, false))
       }
