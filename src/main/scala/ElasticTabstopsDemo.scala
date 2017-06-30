@@ -1,16 +1,17 @@
 import java.awt.{Dimension, Font, FontMetrics}
-import javax.swing.UIManager
 import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
+import javax.swing.{UIManager, WindowConstants}
 
 import assets.InitialText
 import core.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import filehandling.{loadFile, saveFile, saveFileAs}
 
 import scala.swing.BorderPanel.Position.{Center, North}
+import scala.swing.Dialog.Result
 import scala.swing.FlowPanel.Alignment.Left
 import scala.swing.event.ButtonClicked
-import scala.swing.{Action, BorderPanel, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, ScrollPane, Separator, SimpleSwingApplication, TextPane, ToggleButton}
+import scala.swing.{Action, BorderPanel, Dialog, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, ScrollPane, Separator, SimpleSwingApplication, TextPane, ToggleButton}
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
 
@@ -40,24 +41,37 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   var currentPath: Option[String] = None
 
-  def makeWindowTitleText(pathOption: Option[String], modified: Boolean): String = {
+  var modified = false
+
+  def makeWindowTitleText(pathOption: Option[String]): String = {
     s"${if (modified) "* " else ""}${pathOption.getOrElse("Not saved yet")} - Elastic tabstops demo"
   }
 
   def top = new MainFrame {
-    title = makeWindowTitleText(currentPath, false)
+    title = makeWindowTitleText(currentPath)
+    preferredSize = new Dimension(896, 960)
+
+    peer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
+
+    override def closeOperation() = {
+      if (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to close this window?") == Result.Ok) {
+        dispose()
+      }
+    }
 
     def newFileAction(): Unit = {
       textPane.text = ""
       currentPath = None
-      setWindowTitle(makeWindowTitleText(currentPath, false))
+      modified = false
+      setWindowTitle(makeWindowTitleText(currentPath))
     }
 
     def loadFileAction(): Unit = {
       loadFile foreach { case (loadedText, path) =>
         textPane.text = spacesToTabs(loadedText)
         currentPath = Some(path)
-        setWindowTitle(makeWindowTitleText(currentPath, false))
+        modified = false
+        setWindowTitle(makeWindowTitleText(currentPath))
       }
     }
 
@@ -65,11 +79,13 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       currentPath match {
         case Some(path) => {
           saveFile(tabsToSpaces(textPane.text, NofIndentSpaces), path)
-          setWindowTitle(makeWindowTitleText(currentPath, false))
+          modified = false
+          setWindowTitle(makeWindowTitleText(currentPath))
         }
         case None => saveFileAs(textPane.text) foreach { path =>
           currentPath = Some(path)
-          setWindowTitle(makeWindowTitleText(currentPath, false))
+          modified = false
+          setWindowTitle(makeWindowTitleText(currentPath))
         }
       }
     }
@@ -77,7 +93,8 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     def saveFileAsAction(): Unit = {
       saveFileAs(tabsToSpaces(textPane.text, NofIndentSpaces)) foreach { path =>
         currentPath = Some(path)
-        setWindowTitle(makeWindowTitleText(currentPath, false))
+        modified = false
+        setWindowTitle(makeWindowTitleText(currentPath))
       }
     }
 
@@ -91,29 +108,30 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       }
     }
 
-    preferredSize = new Dimension(896, 960)
-
     def setElasticTabstopsDocFilter(textPane: TextPane) = {
       val fontMetrics = textPane.peer.getFontMetrics(textPane.font)
 
       object ElasticTabstopsDocFilter extends DocumentFilter {
         override def insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet) {
           super.insertString(fb, offs, str, a)
-          setWindowTitle(makeWindowTitleText(currentPath, true))
+          modified = true
+          setWindowTitle(makeWindowTitleText(currentPath))
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
           alignTabstops(doc, fontMetrics)
         }
 
         override def remove(fb: FilterBypass, offs: Int, length: Int) {
           super.remove(fb, offs, length)
-          setWindowTitle(makeWindowTitleText(currentPath, true))
+          modified = true
+          setWindowTitle(makeWindowTitleText(currentPath))
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
           alignTabstops(doc, fontMetrics)
         }
 
         override def replace(fb: FilterBypass, offs: Int, length: Int, str: String, a: AttributeSet) {
           super.replace(fb, offs, length, str, a)
-          setWindowTitle(makeWindowTitleText(currentPath, true))
+          modified = true
+          setWindowTitle(makeWindowTitleText(currentPath))
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
           alignTabstops(doc, fontMetrics)
         }
