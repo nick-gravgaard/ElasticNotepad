@@ -1,13 +1,16 @@
 import java.awt.{Dimension, Font, FontMetrics}
 import javax.swing.UIManager
-import javax.swing.text.{AbstractDocument, AttributeSet, DocumentFilter, SimpleAttributeSet, StyleConstants, StyledDocument, TabSet, TabStop}
 import javax.swing.text.DocumentFilter.FilterBypass
-import scala.swing.{Action, Dialog, MainFrame, Menu, MenuBar, MenuItem, ScrollPane, Separator, SimpleSwingApplication, TextPane}
-import scala.util.Try
+import javax.swing.text._
 
 import assets.InitialText
 import core.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import filehandling.{loadFile, saveFile, saveFileAs}
+
+import scala.swing.BorderPanel.Position.{Center, North}
+import scala.swing.FlowPanel.Alignment.Left
+import scala.swing.event.ButtonClicked
+import scala.swing.{Action, BorderPanel, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, ScrollPane, Separator, SimpleSwingApplication, TextPane, ToggleButton}
 
 object ElasticTabstopsDemo extends SimpleSwingApplication {
 
@@ -16,6 +19,9 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
   val CellMinimumWidth = 32
   val CellPaddingWidth = 8
   val NofIndentSpaces = 4
+
+  val proportionalFont = ("Merriweather", 15)
+  val monospacedFont = ("Droid Sans Mono", 15)
 
   def alignTabstops(doc: StyledDocument, fm: FontMetrics): Unit = {
     val section = doc.getDefaultRootElement
@@ -85,11 +91,10 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       }
     }
 
-    preferredSize = new Dimension(768, 900)
+    preferredSize = new Dimension(896, 960)
 
-    val textPane = new TextPane {
-      font = new Font("Merriweather", Font.PLAIN, 15)
-      val fontMetrics = peer.getFontMetrics(font)
+    def setElasticTabstopsDocFilter(textPane: TextPane) = {
+      val fontMetrics = textPane.peer.getFontMetrics(textPane.font)
 
       object ElasticTabstopsDocFilter extends DocumentFilter {
         override def insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet) {
@@ -113,14 +118,55 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
           alignTabstops(doc, fontMetrics)
         }
       }
-
-      peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(ElasticTabstopsDocFilter)
-      peer.setText(InitialText)
+      textPane.peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(ElasticTabstopsDocFilter)
     }
+
+    val textPane = new TextPane { font = new Font(proportionalFont._1, Font.PLAIN, proportionalFont._2) }
+    setElasticTabstopsDocFilter(textPane)
+    textPane.peer.setText(InitialText)
 
     def setWindowTitle(newTitle: String): Unit = peer.setTitle(newTitle)
 
-    contents = new ScrollPane(textPane)
+    val elasticToggle = new ToggleButton { text = "Elastic on"; selected = true }
+    val flowPanel = new FlowPanel(Left)(elasticToggle)
+    val scrollPane = new ScrollPane(textPane)
+
+    contents = new BorderPanel {
+      layout(flowPanel) = North
+      layout(scrollPane) = Center
+    }
+
+    listenTo(elasticToggle)
+
+    def setFont(fontDetails: (String, Int)) = {
+      val attributes = new SimpleAttributeSet
+      StyleConstants.setFontFamily(attributes, fontDetails._1)
+      StyleConstants.setFontSize(attributes, fontDetails._2)
+      val doc = textPane.peer.getDocument.asInstanceOf[StyledDocument]
+      doc.setParagraphAttributes(0, doc.getLength, attributes, true)
+    }
+
+    def turnElasticTabstopsOn = {
+      elasticToggle.text = "Elastic on"
+      setFont(proportionalFont)
+      setElasticTabstopsDocFilter(textPane)
+      textPane.peer.setText(spacesToTabs(textPane.text))
+    }
+
+    def turnElasticTabstopsOff = {
+      elasticToggle.text = "Elastic off"
+      setFont(monospacedFont)
+      textPane.peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(new DocumentFilter)
+      textPane.peer.setText(tabsToSpaces(textPane.text, 4))
+    }
+
+    reactions += {
+      case ButtonClicked(component) if component == elasticToggle =>
+        elasticToggle.selected match {
+          case true => turnElasticTabstopsOn
+          case false => turnElasticTabstopsOff
+        }
+    }
   }
 
 }
