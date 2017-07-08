@@ -1,4 +1,4 @@
-import java.awt.{Dimension, Font, FontMetrics}
+import java.awt.{Canvas, Dimension, Font, FontMetrics}
 import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
 import javax.swing.{UIManager, WindowConstants}
@@ -17,12 +17,15 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
 
-  val CellMinimumWidth = 32
-  val CellPaddingWidth = 8
-  val NofIndentSpaces = 4
+  val proportionalFont = ("Merriweather", 18)
+  val monospacedFont = ("Droid Sans Mono", 18)
 
-  val proportionalFont = ("Merriweather", 15)
-  val monospacedFont = ("Droid Sans Mono", 15)
+  val fontMetrics = new Canvas().getFontMetrics(new Font(proportionalFont._1, Font.PLAIN, proportionalFont._2))
+  val em = fontMetrics.getHeight // more accurate than the font's point size (with Merriweather at least)
+  val EmptyColumnWidth = (2.0 * em).toInt
+  val MinGapBetweenText = (0.6666 * em).toInt
+  val EmptyColumnWidthMinusGap = EmptyColumnWidth - MinGapBetweenText
+  val NofIndentSpaces = 4
 
   def alignTabstops(doc: StyledDocument, fm: FontMetrics): Unit = {
     val section = doc.getDefaultRootElement
@@ -30,7 +33,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
     val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
     val cellsPerLine = textPerLine.map(_.split('\t').toList)
-    def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), CellMinimumWidth) + CellPaddingWidth
+    def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), EmptyColumnWidthMinusGap) + MinGapBetweenText
     for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements)) {
       val tabStops = tabstopPositionsThisLine.map(new TabStop(_))
       val attributes = new SimpleAttributeSet()
@@ -49,7 +52,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   def top = new MainFrame {
     title = makeWindowTitleText(currentPath)
-    preferredSize = new Dimension(896, 960)
+    preferredSize = new Dimension(1072, 1072)
 
     peer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
 
