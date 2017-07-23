@@ -1,4 +1,4 @@
-import java.awt.{Dimension, Font, FontMetrics}
+import java.awt.{Canvas, Dimension, Font, FontMetrics}
 import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
 import javax.swing.{UIManager, WindowConstants}
@@ -106,8 +106,8 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       }
     }
 
-    def setElasticTabstopsDocFilter(textPane: TextPane) = {
-      val fontMetrics = textPane.peer.getFontMetrics(textPane.font)
+    def setElasticTabstopsDocFilter(textPane: TextPane, f: FontCC) = {
+      val fontMetrics = new Canvas().getFontMetrics(new Font(f.name, Font.PLAIN, f.size))
 
       object ElasticTabstopsDocFilter extends DocumentFilter {
         override def insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet) {
@@ -138,7 +138,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
 
     val textPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
-    setElasticTabstopsDocFilter(textPane)
+    setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
     textPane.peer.setText(InitialText)
 
     def setWindowTitle(newTitle: String): Unit = peer.setTitle(newTitle)
@@ -147,7 +147,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     val settingsToggle = new ToggleButton { text = "Settings"; selected = false }
     val toolbarPanel = new FlowPanel(Left)(elasticToggle, settingsToggle)
     val settingsTextPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
-    setElasticTabstopsDocFilter(settingsTextPane)
+    setElasticTabstopsDocFilter(settingsTextPane, currentSettings.elasticFont)
     settingsTextPane.peer.setText(currentSettingsText)
     settingsTextPane.background = this.background
 
@@ -189,7 +189,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     def turnElasticTabstopsOn = {
       elasticToggle.text = "Elastic on"
       setFont(textPane, currentSettings.elasticFont)
-      setElasticTabstopsDocFilter(textPane)
+      setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
       textPane.peer.setText(spacesToTabs(textPane.text))
     }
 
@@ -212,11 +212,11 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
         currentSettings = Settings.saveAndParse(settingsTextPane.text)
 
         setFont(textPane, currentSettings.elasticFont)
-        setElasticTabstopsDocFilter(textPane)
+        setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
         textPane.peer.setText(textPane.text) // force update of tabstop positions
 
         setFont(settingsTextPane, currentSettings.elasticFont)
-        setElasticTabstopsDocFilter(settingsTextPane)
+        setElasticTabstopsDocFilter(settingsTextPane, currentSettings.elasticFont)
         settingsTextPane.peer.setText(settingsTextPane.text) // force update of tabstop positions
       }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>
