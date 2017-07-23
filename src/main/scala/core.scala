@@ -72,24 +72,22 @@ package object core {
     val cellTextRegEx = "[^ ](?:[^ ]| (?=[^ ]))*".r
 
     // get maps for each line containing the position of text and the text itself
-    val matchesPerLine = text.split("\n").map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
+    val matchesPerLine = text.split('\n').map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
 
     val allPositions = SortedSet(matchesPerLine.map(_.keys).toList.flatten: _*)
 
-    val nofPossCellsPerLine = for (matchesThisLine <- matchesPerLine)
-      yield allPositions.toList.reverse.dropWhile(!matchesThisLine.contains(_)).length
-
     // for each line, create matched or empty strings at every possible cell position
     val possCellsPerLine = for (matchesThisLine <- matchesPerLine)
-      yield for (position <- allPositions.toList)
-        yield if (matchesThisLine.contains(position)) matchesThisLine(position) else ""
+      yield for (position <- allPositions.toArray)
+        yield if (matchesThisLine.contains(position)) Some(matchesThisLine(position)) else Some("")
 
     // we know that empty strings at the end of the line cannot be cells, so replace them with None
-    val possCellsPerLine2 = (for ((possCellsThisLine, nofPossCellsThisLine) <- possCellsPerLine.zip(nofPossCellsPerLine))
-      yield for ((possibleCell, i) <- possCellsThisLine.zipWithIndex)
-        yield if (i < nofPossCellsThisLine) Some(possibleCell) else None).toList
+    val possCellsPerLine2 = possCellsPerLine.map { possCellsThisLine =>
+      val nofTrailingEmpties = possCellsThisLine.reverse.takeWhile(_.contains("")).length
+      possCellsThisLine.take(possCellsThisLine.length - nofTrailingEmpties) ++ List.fill(nofTrailingEmpties)(None)
+    }
 
     // finally, transpose, replace empty columns with Nones, transpose back, remove Nones, and join
-    possCellsPerLine2.transpose.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t")).mkString("\n")
+    possCellsPerLine2.toList.transpose.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t")).mkString("\n")
   }
 }
