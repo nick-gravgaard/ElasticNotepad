@@ -211,9 +211,13 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       case ButtonClicked(component) if component == saveAndApplySettingsButton => {
         currentSettings = Settings.saveAndParse(settingsTextPane.text)
 
-        setFont(textPane, currentSettings.elasticFont)
-        setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
-        textPane.peer.setText(textPane.text) // force update of tabstop positions
+        if (elasticToggle.selected) {
+          setFont(textPane, currentSettings.elasticFont)
+          setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
+          textPane.peer.setText(textPane.text) // force update of tabstop positions
+        } else {
+          setFont(textPane, currentSettings.nonElasticFont)
+        }
 
         setFont(settingsTextPane, currentSettings.elasticFont)
         setElasticTabstopsDocFilter(settingsTextPane, currentSettings.elasticFont)
