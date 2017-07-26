@@ -1,21 +1,6 @@
 package object assets {
   val InitialText = StringContext.treatEscapes(
-    """/* Hopefully this editor widget should demonstrate how elastic tabstops work.\t*/
-      |/* Try inserting and deleting different parts of the text and watch as the tabstops move.\t*/
-      |/* If you like this, please ask the writers of your text editor to implement it.\t*/
-      |
-      |#include <stdio.h>
-      |
-      |struct ipc_perm
-      |{
-      |\tkey_t\tkey;
-      |\tushort\tuid;\t/* owner euid and egid\t*/
-      |\tushort\tgid;\t/* group id\t*/
-      |\tushort\tcuid;\t/* creator euid and egid\t*/
-      |\tcell-missing\t\t/* for test purposes\t*/
-      |\tushort\tmode;\t/* access modes\t*/
-      |\tushort\tseq;\t/* sequence number\t*/
-      |};
+    """This example text appears in your scratch file after installation so you can play with elastic tabstops.
       |
       |int someDemoCode(\tint fred,
       |\tint wilma)
@@ -33,7 +18,7 @@ package object assets {
       |\treturn numPrimes;
       |}
       |
-      |---- and now for something completely different: a table ----
+      |Elastic tabstops is excellent for editing tables and TSV files too.
       |
       |Title\tAuthor\tPublisher\tYear
       |Generation X\tDouglas Coupland\tAbacus\t1995

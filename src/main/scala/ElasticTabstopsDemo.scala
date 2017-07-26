@@ -3,9 +3,8 @@ import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
 import javax.swing.{UIManager, WindowConstants}
 
-import assets.InitialText
 import core.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
-import filehandling.{chooseAndLoadFile, saveFile, saveFileAs}
+import filehandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
 
 import scala.swing.BorderPanel.Position.{Center, North}
@@ -35,12 +34,12 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
   }
 
-  var currentPath: Option[String] = None
+  var currentPath = scratchFilePath.toString
 
   var modified = false
 
-  def makeWindowTitleText(pathOption: Option[String]): String = {
-    s"${if (modified) "* " else ""}${pathOption.getOrElse("Not saved yet")} - Elastic tabstops demo"
+  def makeWindowTitleText(path: String): String = {
+    s"${if (modified) "* " else ""}$path - Elastic tabstops demo"
   }
 
   def top = new MainFrame {
@@ -55,17 +54,19 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       }
     }
 
-    def newFileAction(): Unit = {
-      textPane.text = ""
-      currentPath = None
-      modified = false
-      setWindowTitle(makeWindowTitleText(currentPath))
+    def scratchFileAction(): Unit = {
+      if (currentPath != scratchFilePath.toString && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
+        textPane.text = loadScratchFile
+        currentPath = scratchFilePath.toString
+        modified = false
+        setWindowTitle(makeWindowTitleText(currentPath))
+      }
     }
 
     def loadFileAction(): Unit = {
       chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
         textPane.text = if (currentSettings.filesUseSpaces) spacesToTabs(loadedText) else loadedText
-        currentPath = Some(path)
+        currentPath = path
         modified = false
         setWindowTitle(makeWindowTitleText(currentPath))
       }
@@ -73,24 +74,15 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
     def saveFileAction(): Unit = {
       val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
-      currentPath match {
-        case Some(path) => {
-          saveFile(textToSave, currentSettings.filesEndWithNewline, path)
-          modified = false
-          setWindowTitle(makeWindowTitleText(currentPath))
-        }
-        case None => saveFileAs(textToSave, currentSettings.filesEndWithNewline) foreach { path =>
-          currentPath = Some(path)
-          modified = false
-          setWindowTitle(makeWindowTitleText(currentPath))
-        }
-      }
+      saveFile(textToSave, currentSettings.filesEndWithNewline, currentPath)
+      modified = false
+      setWindowTitle(makeWindowTitleText(currentPath))
     }
 
     def saveFileAsAction(): Unit = {
       val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
       saveFileAs(textToSave, currentSettings.filesEndWithNewline) foreach { path =>
-        currentPath = Some(path)
+        currentPath = path
         modified = false
         setWindowTitle(makeWindowTitleText(currentPath))
       }
@@ -98,7 +90,7 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
     menuBar = new MenuBar {
       contents += new Menu("File") {
-        contents += new MenuItem(Action("New") { newFileAction })
+        contents += new MenuItem(Action("Open scratch file") { scratchFileAction })
         contents += new MenuItem(Action("Open...") { loadFileAction })
         contents += new Separator
         contents += new MenuItem(Action("Save") { saveFileAction })
@@ -106,30 +98,34 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       }
     }
 
-    def setElasticTabstopsDocFilter(textPane: TextPane, f: FontCC) = {
+    def setWindowTitle(newTitle: String): Unit = peer.setTitle(newTitle)
+
+    def onTextPaneChangeSetModified() = {
+      modified = true
+      setWindowTitle(makeWindowTitleText(currentPath))
+    }
+
+    def setElasticTabstopsDocFilter(textPane: TextPane, f: FontCC, onChange: () => Unit = { () => Unit }) = {
       val fontMetrics = new Canvas().getFontMetrics(new Font(f.name, Font.PLAIN, f.size))
 
       object ElasticTabstopsDocFilter extends DocumentFilter {
         override def insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet) {
           super.insertString(fb, offs, str, a)
-          modified = true
-          setWindowTitle(makeWindowTitleText(currentPath))
+          onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
           alignTabstops(doc, fontMetrics)
         }
 
         override def remove(fb: FilterBypass, offs: Int, length: Int) {
           super.remove(fb, offs, length)
-          modified = true
-          setWindowTitle(makeWindowTitleText(currentPath))
+          onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
           alignTabstops(doc, fontMetrics)
         }
 
         override def replace(fb: FilterBypass, offs: Int, length: Int, str: String, a: AttributeSet) {
           super.replace(fb, offs, length, str, a)
-          modified = true
-          setWindowTitle(makeWindowTitleText(currentPath))
+          onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
           alignTabstops(doc, fontMetrics)
         }
@@ -138,17 +134,17 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     }
 
     val textPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
-    setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
-    textPane.peer.setText(InitialText)
-
-    def setWindowTitle(newTitle: String): Unit = peer.setTitle(newTitle)
+    setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont, onTextPaneChangeSetModified)
+    textPane.text = loadScratchFile
+    modified = false
+    setWindowTitle(makeWindowTitleText(currentPath))
 
     val elasticToggle = new ToggleButton { text = "Elastic on"; selected = true }
     val settingsToggle = new ToggleButton { text = "Settings"; selected = false }
     val toolbarPanel = new FlowPanel(Left)(elasticToggle, settingsToggle)
     val settingsTextPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
     setElasticTabstopsDocFilter(settingsTextPane, currentSettings.elasticFont)
-    settingsTextPane.peer.setText(currentSettingsText)
+    settingsTextPane.text = currentSettingsText
     settingsTextPane.background = this.background
 
     val saveAndApplySettingsButton = new Button("Save and apply")
@@ -189,15 +185,15 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
     def turnElasticTabstopsOn = {
       elasticToggle.text = "Elastic on"
       setFont(textPane, currentSettings.elasticFont)
-      setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
-      textPane.peer.setText(spacesToTabs(textPane.text))
+      setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont, onTextPaneChangeSetModified)
+      textPane.text = spacesToTabs(textPane.text)
     }
 
     def turnElasticTabstopsOff = {
       elasticToggle.text = "Elastic off"
       setFont(textPane, currentSettings.nonElasticFont)
       textPane.peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(new DocumentFilter)
-      textPane.peer.setText(tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces))
+      textPane.text = tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces)
     }
 
     reactions += {
@@ -213,15 +209,17 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
         if (elasticToggle.selected) {
           setFont(textPane, currentSettings.elasticFont)
-          setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont)
-          textPane.peer.setText(textPane.text) // force update of tabstop positions
+          setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont, onTextPaneChangeSetModified)
+          textPane.text = textPane.text // force update of tabstop positions
+          modified = false
+          setWindowTitle(makeWindowTitleText(currentPath))
         } else {
           setFont(textPane, currentSettings.nonElasticFont)
         }
 
         setFont(settingsTextPane, currentSettings.elasticFont)
         setElasticTabstopsDocFilter(settingsTextPane, currentSettings.elasticFont)
-        settingsTextPane.peer.setText(settingsTextPane.text) // force update of tabstop positions
+        settingsTextPane.text = settingsTextPane.text // force update of tabstop positions
       }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>
         settingsTextPane.text = Settings.defaultSettingsText

@@ -1,10 +1,17 @@
 import java.awt.FileDialog
 import java.io.{BufferedWriter, FileNotFoundException, FileOutputStream, IOException, OutputStreamWriter}
+import java.nio.file.{Files, Path, Paths}
+
 import scala.io.Source
 import scala.swing.Dialog
+import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
 
 package object filehandling {
+
+  val appDirPath: Path = Paths.get(s"${System.getProperty("user.home")}/.elasticnotepad")
+  val scratchFilePath: Path = Paths.get(s"$appDirPath/scratch")
+  val settingsFilePath: Path = Paths.get(s"$appDirPath/settings")
 
   def alwaysClose[A <: {def close(): Unit}, B] (closeable: A) (f: A => B): B = {
     try {
@@ -19,6 +26,46 @@ package object filehandling {
       }
     }
   }
+
+  def createAppDir = {
+    if (!Files.exists(appDirPath)) {
+      Try(Files.createDirectory(appDirPath)) recoverWith {
+        case exception => {
+          Dialog.showMessage(null, exception.getMessage)
+          Failure(exception)
+        }
+      }
+    }
+  }
+
+  def loadScratchFile: String = {
+    createAppDir
+
+    Files.exists(scratchFilePath) match {
+      case false => {
+        Try(Files.createFile(scratchFilePath)) recoverWith {
+          case exception => {
+            Dialog.showMessage(null, exception.getMessage)
+            Failure(exception)
+          }
+        }
+        saveFile(assets.InitialText, true, scratchFilePath.toString)
+        assets.InitialText
+      }
+      case true => {
+        loadFile(Source.fromFile(scratchFilePath.toString, "UTF-8"), true) match {
+          case Right(fileContents) => {
+            fileContents
+          }
+          case Left(errorMessage) => {
+            Dialog.showMessage(null, errorMessage)
+            assets.InitialText
+          }
+        }
+      }
+    }
+  }
+
 
   def loadFile(fileSource: Source, trimNewlines: Boolean): Either[String, String] = {
     try {

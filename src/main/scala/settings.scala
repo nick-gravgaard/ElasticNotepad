@@ -1,7 +1,7 @@
 import java.awt.{Canvas, Font}
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.Files
 
-import filehandling.{loadFile, saveFile}
+import filehandling.{createAppDir, loadFile, saveFile, settingsFilePath}
 
 import scala.io.Source
 import scala.swing.Dialog
@@ -34,9 +34,6 @@ package object settings {
   object Settings {
     def defaults = Settings(FontCC("Merriweather", 18), FontCC("Droid Sans Mono", 18), 2.0, 0.6666, 4, true, true)
 
-    val settingsDirPath: Path = Paths.get(s"${System.getProperty("user.home")}/.elasticnotepad")
-    val settingsFilePath: Path = Paths.get(s"$settingsDirPath/settings")
-
     private val elasticFontText = ("Elastic font", "Used when elastic tabstops is on (can be proportional)")
     private val nonElasticFontText = ("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")
     private val emptyColumnWidthText = ("Empty column width", "Measured in multiples of line height (ems)")
@@ -58,19 +55,8 @@ package object settings {
       cellsPerLine.map { case (value, (key, description)) => s"$key:\t$value\t| $description" }.mkString("\n")
     }
 
-    def createSettingsDir = {
-      if (!Files.exists(settingsDirPath)) {
-        Try(Files.createDirectory(settingsDirPath)) recoverWith {
-          case exception => {
-            Dialog.showMessage(null, exception.getMessage)
-            Failure(exception)
-          }
-        }
-      }
-    }
-
     def load: (Settings, String) = {
-      createSettingsDir
+      createAppDir
 
       Files.exists(settingsFilePath) match {
         case false => {
@@ -98,7 +84,7 @@ package object settings {
     }
 
     def saveAndParse(text: String): Settings = {
-      createSettingsDir
+      createAppDir
       saveFile(text, true, settingsFilePath.toString)
       fromString(text)
     }
