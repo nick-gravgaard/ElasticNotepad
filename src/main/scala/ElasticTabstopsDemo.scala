@@ -19,6 +19,19 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   var (currentSettings, currentSettingsText) = Settings.load
 
+  def scaleUiFonts(multiplier: Float) = {
+    UIManager.getLookAndFeelDefaults.keySet.forEach { key =>
+      val keyName = key.toString
+      if (keyName.endsWith(".font")) {
+        val font = UIManager.getFont(keyName)
+        val biggerFont = font.deriveFont(multiplier * font.getSize2D)
+        UIManager.put(keyName, biggerFont)
+      }
+    }
+  }
+
+  scaleUiFonts(1.75f)
+
   def alignTabstops(doc: StyledDocument, fm: FontMetrics): Unit = {
     val section = doc.getDefaultRootElement
     val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
@@ -44,7 +57,8 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   def top = new MainFrame {
     title = makeWindowTitleText(currentPath)
-    preferredSize = new Dimension(1072, 1072)
+    preferredSize = new Dimension(1536, 1024)
+    maximize
 
     peer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
 

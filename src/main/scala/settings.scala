@@ -32,7 +32,7 @@ package object settings {
   }
 
   object Settings {
-    def defaults = Settings(FontCC("Merriweather", 18), FontCC("Droid Sans Mono", 18), 2.0, 0.6666, 4, true, true)
+    def defaults = Settings(FontCC("Merriweather", 25), FontCC("Droid Sans Mono", 23), 1.8, 0.625, 4, true, true)
 
     private val elasticFontText = ("Elastic font", "Used when elastic tabstops is on (can be proportional)")
     private val nonElasticFontText = ("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")
