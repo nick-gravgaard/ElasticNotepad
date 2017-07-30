@@ -1,7 +1,9 @@
 import java.awt.{Canvas, Dimension, Font, FontMetrics}
+import java.awt.Event.{CTRL_MASK, SHIFT_MASK}
+import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S}
 import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
-import javax.swing.{UIManager, WindowConstants}
+import javax.swing.{KeyStroke, UIManager, WindowConstants}
 
 import core.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import filehandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
@@ -68,47 +70,63 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       }
     }
 
-    def scratchFileAction(): Unit = {
-      if (currentPath != scratchFilePath.toString && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
-        textPane.text = loadScratchFile
-        currentPath = scratchFilePath.toString
+    def scratchFileAction(): Action = {
+      val action = Action("Open scratch file") {
+        if (currentPath != scratchFilePath.toString && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
+          textPane.text = loadScratchFile
+          currentPath = scratchFilePath.toString
+          modified = false
+          setWindowTitle(makeWindowTitleText(currentPath))
+        }
+      }
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_N, CTRL_MASK))
+      action
+    }
+
+    def loadFileAction(): Action = {
+      val action = Action("Open...") {
+        chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
+          textPane.text = if (currentSettings.filesUseSpaces) spacesToTabs(loadedText) else loadedText
+          currentPath = path
+          modified = false
+          setWindowTitle(makeWindowTitleText(currentPath))
+        }
+      }
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_O, CTRL_MASK))
+      action
+    }
+
+    def saveFileAction(): Action = {
+      val action = Action("Save") {
+        val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
+        saveFile(textToSave, currentSettings.filesEndWithNewline, currentPath)
         modified = false
         setWindowTitle(makeWindowTitleText(currentPath))
       }
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, CTRL_MASK))
+      action
     }
 
-    def loadFileAction(): Unit = {
-      chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
-        textPane.text = if (currentSettings.filesUseSpaces) spacesToTabs(loadedText) else loadedText
-        currentPath = path
-        modified = false
-        setWindowTitle(makeWindowTitleText(currentPath))
+    def saveFileAsAction(): Action = {
+      val action = Action("Save as...") {
+        val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
+        saveFileAs(textToSave, currentSettings.filesEndWithNewline) foreach { path =>
+          currentPath = path
+          modified = false
+          setWindowTitle(makeWindowTitleText(currentPath))
+        }
       }
-    }
-
-    def saveFileAction(): Unit = {
-      val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
-      saveFile(textToSave, currentSettings.filesEndWithNewline, currentPath)
-      modified = false
-      setWindowTitle(makeWindowTitleText(currentPath))
-    }
-
-    def saveFileAsAction(): Unit = {
-      val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
-      saveFileAs(textToSave, currentSettings.filesEndWithNewline) foreach { path =>
-        currentPath = path
-        modified = false
-        setWindowTitle(makeWindowTitleText(currentPath))
-      }
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, CTRL_MASK | SHIFT_MASK))
+      action
     }
 
     menuBar = new MenuBar {
       contents += new Menu("File") {
-        contents += new MenuItem(Action("Open scratch file") { scratchFileAction })
-        contents += new MenuItem(Action("Open...") { loadFileAction })
+        contents += new MenuItem(scratchFileAction)
+        contents += new MenuItem(loadFileAction)
         contents += new Separator
-        contents += new MenuItem(Action("Save") { saveFileAction })
-        contents += new MenuItem(Action("Save as...") { saveFileAsAction })
+        contents += new MenuItem(saveFileAction)
+        contents += new MenuItem(saveFileAsAction)
       }
     }
 
@@ -237,7 +255,6 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>
         settingsTextPane.text = Settings.defaultSettingsText
-
     }
   }
 
