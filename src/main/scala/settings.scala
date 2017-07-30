@@ -1,7 +1,7 @@
 import java.awt.{Canvas, Font}
 import java.nio.file.Files
 
-import filehandling.{createAppDir, loadFile, saveFile, settingsFilePath}
+import fileHandling.{createAppDir, loadFile, saveFile, settingsFilePath}
 
 import scala.io.Source
 import scala.swing.Dialog

@@ -1,6 +1,6 @@
 import scala.collection.SortedSet
 
-package object core {
+package object elasticTabstops {
 
   def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
     // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))

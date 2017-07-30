@@ -5,8 +5,8 @@ import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
 import javax.swing.{KeyStroke, UIManager, WindowConstants}
 
-import core.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
-import filehandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
+import elasticTabstops.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
+import fileHandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
 
 import scala.swing.BorderPanel.Position.{Center, North}
@@ -15,11 +15,14 @@ import scala.swing.FlowPanel.Alignment.Left
 import scala.swing.event.ButtonClicked
 import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, Orientation, ScrollPane, Separator, SimpleSwingApplication, TextPane, ToggleButton}
 
-object ElasticTabstopsDemo extends SimpleSwingApplication {
+object ElasticNotepad extends SimpleSwingApplication {
+
+  val appName = "Elastic Notepad"
+  var (currentSettings, currentSettingsText) = Settings.load
+  var currentPath = scratchFilePath.toString
+  var modified = false
 
   UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
-
-  var (currentSettings, currentSettingsText) = Settings.load
 
   def scaleUiFonts(multiplier: Float) = {
     UIManager.getLookAndFeelDefaults.keySet.forEach { key =>
@@ -34,6 +37,10 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
 
   scaleUiFonts(1.75f)
 
+  def makeWindowTitleText(path: String): String = {
+    s"${if (modified) "* " else ""}$path - $appName"
+  }
+
   def alignTabstops(doc: StyledDocument, fm: FontMetrics): Unit = {
     val section = doc.getDefaultRootElement
     val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
@@ -47,14 +54,6 @@ object ElasticTabstopsDemo extends SimpleSwingApplication {
       StyleConstants.setTabSet(attributes, new TabSet(tabStops.toArray))
       doc.setParagraphAttributes(element.getStartOffset, element.getEndOffset, attributes, false)
     }
-  }
-
-  var currentPath = scratchFilePath.toString
-
-  var modified = false
-
-  def makeWindowTitleText(path: String): String = {
-    s"${if (modified) "* " else ""}$path - Elastic tabstops demo"
   }
 
   def top = new MainFrame {

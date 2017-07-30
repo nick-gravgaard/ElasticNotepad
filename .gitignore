@@ -22,4 +22,4 @@ project/plugins/project/
 
 # IntelliJ
 .idea
-
+*.iml

@@ -7,7 +7,7 @@ import scala.swing.Dialog
 import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
 
-package object filehandling {
+package object fileHandling {
 
   val appDirPath: Path = Paths.get(s"${System.getProperty("user.home")}/.elasticnotepad")
   val scratchFilePath: Path = Paths.get(s"$appDirPath/scratch")

@@ -1,4 +1,4 @@
-name := "ElasticTabstopsDemo"
+name := "ElasticNotepad"
 
 version := "1.0"
 

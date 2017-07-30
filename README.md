@@ -1,14 +1,17 @@
-# Elastic tabstops demo
+# Elastic Notepad
 
-This is a simple demo of elastic tabstops which uses Swing and is written in
-Scala. It was originally based on some Java code I wrote back in 2006 but has
-been rewritten in a more functional style. I think this makes the core algorithm
-easier to understand, which hopefully makes it easier for other people to
-reimplement.
+Wouldn't it be nice if we could use proportional fonts to write code? Well,
+thanks to [elastic tabstops](http://nickgravgaard.com/elastic-tabstops/), now
+we can. This editor implements that invention and should serve as a reference
+for anyone who wants to implement it in other editors.
 
-It is intended to demonstrate the concept of elastic tabstops, rather than the
-most efficient implementation. It is very inefficient as it rescans the entire
-buffer every time a change is made, rather than caching everything and only
-rescanning the parts that have changed. Unless performance is not an issue,
-those wishing to reimplement elastic tabstops should find a way to cache cell
-widths per line.
+The reference implementation of the core elastic tabstops algorithm can be
+found in [elasticTabstops.scala](src/main/scala/elasticTabstops.scala).
+
+## Prerequisites
+
+The current version's settings default to using the fonts
+[Merriweather](https://fonts.google.com/specimen/Merriweather) and
+[Droid Sans Mono](https://fonts.google.com/specimen/Droid+Sans+Mono). You can
+change your settings of course, but I recommend installing these fonts so you
+can try them out.
