@@ -5,6 +5,7 @@ import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
 import javax.swing.{KeyStroke, UIManager, WindowConstants}
 
+import buildInfo.BuildInfo.{name => appName, version => appVersion}
 import elasticTabstops.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
@@ -17,7 +18,6 @@ import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, Ma
 
 object ElasticNotepad extends SimpleSwingApplication {
 
-  val appName = "Elastic Notepad"
   var (currentSettings, currentSettingsText) = Settings.load
   var currentPath = scratchFilePath.toString
   var modified = false
@@ -38,7 +38,7 @@ object ElasticNotepad extends SimpleSwingApplication {
   scaleUiFonts(1.75f)
 
   def makeWindowTitleText(path: String): String = {
-    s"${if (modified) "* " else ""}$path - $appName"
+    s"${if (modified) "* " else ""}$path - $appName v$appVersion"
   }
 
   def alignTabstops(doc: StyledDocument, fm: FontMetrics): Unit = {
