@@ -85,7 +85,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     def loadFileAction(): Action = {
       val action = Action("Open...") {
         chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
-          textPane.text = if (currentSettings.filesUseSpaces) spacesToTabs(loadedText) else loadedText
+          textPane.text = if (currentSettings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText
           currentPath = path
           modified = false
           setWindowTitle(makeWindowTitleText(currentPath))
@@ -97,7 +97,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def saveFileAction(): Action = {
       val action = Action("Save") {
-        val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
+        val textToSave = if (currentSettings.filesAreNonElastic) tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize) else textPane.text
         saveFile(textToSave, currentSettings.filesEndWithNewline, currentPath)
         modified = false
         setWindowTitle(makeWindowTitleText(currentPath))
@@ -108,7 +108,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def saveFileAsAction(): Action = {
       val action = Action("Save as...") {
-        val textToSave = if (currentSettings.filesUseSpaces) tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces) else textPane.text
+        val textToSave = if (currentSettings.filesAreNonElastic) tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize) else textPane.text
         saveFileAs(textToSave, currentSettings.filesEndWithNewline) foreach { path =>
           currentPath = path
           modified = false
@@ -224,7 +224,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       elasticToggle.text = "Elastic off"
       setFont(textPane, currentSettings.nonElasticFont)
       textPane.peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(new DocumentFilter)
-      textPane.text = tabsToSpaces(textPane.text, currentSettings.nofIndentSpaces)
+      textPane.text = tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize)
     }
 
     reactions += {

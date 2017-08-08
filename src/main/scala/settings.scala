@@ -17,8 +17,8 @@ package object settings {
                       nonElasticFont: FontCC,
                       emptyColumnWidth: Double,
                       minGapBetweenText: Double,
-                      nofIndentSpaces: Int,
-                      filesUseSpaces: Boolean,
+                      nonElasticTabSize: Int,
+                      filesAreNonElastic: Boolean,
                       filesEndWithNewline: Boolean) {
 
     val (emptyColumnWidthMinusGapPx, minGapBetweenTextPx) = {
@@ -38,8 +38,8 @@ package object settings {
     private val nonElasticFontText = ("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")
     private val emptyColumnWidthText = ("Empty column width", "Measured in multiples of line height (ems)")
     private val minGapBetweenTextText = ("Smallest gap between text", "Measured in multiples of line height (ems)")
-    private val nofIndentSpacesText = ("Traditional tab size", "The number of spaces to indent by in non-elastic files")
-    private val filesUseSpacesText = ("Files on disk use spaces", "Convert from/to spaces when loading/saving")
+    private val nonElasticTabSizeText = ("Non-elastic tab size", "The indent size in non-elastic files")
+    private val filesAreNonElasticText = ("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")
     private val filesEndWithNewlineText = ("Exactly one newline at end of file", "Many tools need all lines to be terminated by a newline")
 
     def defaultSettingsText: String = {
@@ -48,8 +48,8 @@ package object settings {
         (defaults.nonElasticFont.toString, nonElasticFontText),
         (defaults.emptyColumnWidth.toString, emptyColumnWidthText),
         (defaults.minGapBetweenText.toString, minGapBetweenTextText),
-        (defaults.nofIndentSpaces.toString, nofIndentSpacesText),
-        (defaults.filesUseSpaces.toString, filesUseSpacesText),
+        (defaults.nonElasticTabSize.toString, nonElasticTabSizeText),
+        (defaults.filesAreNonElastic.toString, filesAreNonElasticText),
         (defaults.filesEndWithNewline.toString, filesEndWithNewlineText)
       )
       cellsPerLine.map { case (value, (key, description)) => s"$key:\t$value\t| $description" }.mkString("\n")
@@ -116,8 +116,8 @@ package object settings {
         getFont(m, nonElasticFontText._1),
         m.get(emptyColumnWidthText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.emptyColumnWidth),
         m.get(minGapBetweenTextText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.minGapBetweenText),
-        m.get(nofIndentSpacesText._1).flatMap(i => Try(i.toInt).toOption).getOrElse(defaults.nofIndentSpaces),
-        m.get(filesUseSpacesText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesUseSpaces),
+        m.get(nonElasticTabSizeText._1).flatMap(i => Try(i.toInt).toOption).getOrElse(defaults.nonElasticTabSize),
+        m.get(filesAreNonElasticText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesAreNonElastic),
         m.get(filesEndWithNewlineText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesEndWithNewline)
       )
     }
