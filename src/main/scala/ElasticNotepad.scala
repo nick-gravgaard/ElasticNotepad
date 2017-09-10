@@ -1,9 +1,11 @@
 import java.awt.{Canvas, Dimension, Font, FontMetrics}
 import java.awt.Event.{CTRL_MASK, SHIFT_MASK}
-import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S}
+import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S, VK_Z}
 import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.text._
 import javax.swing.{KeyStroke, UIManager, WindowConstants}
+import javax.swing.event.{DocumentEvent, UndoableEditEvent, UndoableEditListener}
+import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
 
 import buildInfo.BuildInfo.{name => appName, version => appVersion}
 import elasticTabstops.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
@@ -13,7 +15,7 @@ import settings.{FontCC, Settings}
 import scala.swing.BorderPanel.Position.{Center, North}
 import scala.swing.Dialog.Result
 import scala.swing.FlowPanel.Alignment.Left
-import scala.swing.event.ButtonClicked
+import scala.swing.event.{ButtonClicked, Key, KeyPressed}
 import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, Orientation, ScrollPane, Separator, SimpleSwingApplication, TextPane, ToggleButton}
 
 object ElasticNotepad extends SimpleSwingApplication {
@@ -136,8 +138,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       setWindowTitle(makeWindowTitleText(currentPath))
     }
 
-    def setElasticTabstopsDocFilter(textPane: TextPane, f: FontCC, onChange: () => Unit = { () => Unit }) = {
-      val fontMetrics = new Canvas().getFontMetrics(new Font(f.name, Font.PLAIN, f.size))
+    def setElasticTabstopsDocFilter(textPane: TextPane, fontMetrics: FontMetrics, onChange: () => Unit = { () => Unit }) = {
 
       object ElasticTabstopsDocFilter extends DocumentFilter {
         override def insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet) {
@@ -165,16 +166,59 @@ object ElasticNotepad extends SimpleSwingApplication {
     }
 
     val textPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
-    setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont, onTextPaneChangeSetModified)
+    var elasticFontMetrics = new Canvas().getFontMetrics(new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size))
+    setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
     textPane.text = loadScratchFile
     modified = false
     setWindowTitle(makeWindowTitleText(currentPath))
+
+    val undoManager = new UndoManager
+    val doc = textPane.peer.getDocument
+    doc.addUndoableEditListener((evt: UndoableEditEvent) => {
+      val eventType = evt.getEdit.asInstanceOf[DocumentEvent].getType
+      if (eventType != DocumentEvent.EventType.CHANGE) {
+        // don't allow undoing of style changes (so we ignore tabstop changes)
+        undoManager.addEdit(evt.getEdit)
+      }
+    })
+
+    def undoAction(): Action = {
+      val action = Action("Undo") {
+        try {
+          if (undoManager.canUndo) {
+            undoManager.undo()
+            alignTabstops(doc.asInstanceOf[StyledDocument], elasticFontMetrics)
+          }
+        }
+        catch {
+          case e: CannotUndoException =>
+        }
+      }
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_Z, CTRL_MASK))
+      action
+    }
+
+    def redoAction(): Action = {
+      val action = Action("Redo") {
+        try {
+          if (undoManager.canRedo) {
+            undoManager.redo()
+            alignTabstops(doc.asInstanceOf[StyledDocument], elasticFontMetrics)
+          }
+        }
+        catch {
+          case e: CannotRedoException =>
+        }
+      }
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_Z, CTRL_MASK | SHIFT_MASK))
+      action
+    }
 
     val elasticToggle = new ToggleButton { text = "Elastic on"; selected = true }
     val settingsToggle = new ToggleButton { text = "Settings"; selected = false }
     val toolbarPanel = new FlowPanel(Left)(elasticToggle, settingsToggle)
     val settingsTextPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
-    setElasticTabstopsDocFilter(settingsTextPane, currentSettings.elasticFont)
+    setElasticTabstopsDocFilter(settingsTextPane, elasticFontMetrics)
     settingsTextPane.text = currentSettingsText
     settingsTextPane.background = this.background
 
@@ -200,6 +244,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       layout(scrollPane) = Center
     }
 
+    listenTo(textPane.keys)
     listenTo(elasticToggle)
     listenTo(settingsToggle)
     listenTo(saveAndApplySettingsButton)
@@ -216,7 +261,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     def turnElasticTabstopsOn = {
       elasticToggle.text = "Elastic on"
       setFont(textPane, currentSettings.elasticFont)
-      setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont, onTextPaneChangeSetModified)
+      setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
       textPane.text = spacesToTabs(textPane.text)
     }
 
@@ -228,6 +273,15 @@ object ElasticNotepad extends SimpleSwingApplication {
     }
 
     reactions += {
+      case kp @ KeyPressed(_, Key.Z, _, _) => {
+        if (kp.peer.isControlDown()) {
+          if (kp.peer.isShiftDown()) {
+            redoAction.apply
+          } else {
+            undoAction.apply
+          }
+        }
+      }
       case ButtonClicked(component) if component == elasticToggle =>
         elasticToggle.selected match {
           case true => turnElasticTabstopsOn
@@ -237,10 +291,11 @@ object ElasticNotepad extends SimpleSwingApplication {
         settingsPanel.visible = settingsToggle.selected
       case ButtonClicked(component) if component == saveAndApplySettingsButton => {
         currentSettings = Settings.saveAndParse(settingsTextPane.text)
+        elasticFontMetrics = new Canvas().getFontMetrics(new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size))
 
         if (elasticToggle.selected) {
           setFont(textPane, currentSettings.elasticFont)
-          setElasticTabstopsDocFilter(textPane, currentSettings.elasticFont, onTextPaneChangeSetModified)
+          setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
           textPane.text = textPane.text // force update of tabstop positions
           modified = false
           setWindowTitle(makeWindowTitleText(currentPath))
@@ -249,7 +304,7 @@ object ElasticNotepad extends SimpleSwingApplication {
         }
 
         setFont(settingsTextPane, currentSettings.elasticFont)
-        setElasticTabstopsDocFilter(settingsTextPane, currentSettings.elasticFont)
+        setElasticTabstopsDocFilter(settingsTextPane, elasticFontMetrics)
         settingsTextPane.text = settingsTextPane.text // force update of tabstop positions
       }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>
