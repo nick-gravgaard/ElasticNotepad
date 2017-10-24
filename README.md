@@ -15,3 +15,11 @@ The current version's settings default to using the fonts
 [Droid Sans Mono](https://fonts.google.com/specimen/Droid+Sans+Mono). You can
 change your settings of course, but I recommend installing these fonts so you
 can try them out.
+
+You'll also need to have Java installed.
+
+## Running it
+
+You can run it like this:
+
+	java -jar ElasticNotepad.jar
