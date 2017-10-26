@@ -1,4 +1,4 @@
-import java.awt.{Canvas, Font}
+import java.awt.{Canvas, Font, GraphicsEnvironment}
 import java.nio.file.Files
 
 import fileHandling.{createAppDir, loadFile, saveFile, settingsFilePath}
@@ -33,6 +33,9 @@ package object settings {
 
   object Settings {
     def defaults = Settings(FontCC("Merriweather", 25), FontCC("Droid Sans Mono", 23), 1.8, 0.625, 4, true, true)
+
+    private val backupElasticFont = FontCC("Serif", 23)
+    private val backupNonElasticFont = FontCC("Monospaced", 23)
 
     private val elasticFontText = ("Elastic font", "Used when elastic tabstops is on (can be proportional)")
     private val nonElasticFontText = ("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")
@@ -89,18 +92,36 @@ package object settings {
       fromString(text)
     }
 
+    def checkFontExists(fontName: String): Boolean = {
+      val g = GraphicsEnvironment.getLocalGraphicsEnvironment
+      val fonts = g.getAvailableFontFamilyNames
+      fonts contains fontName
+    }
+
     def getFont(m: Map[String, String], key: String): FontCC = {
-      val defaultFont = if (key == nonElasticFontText._1) defaults.nonElasticFont else defaults.elasticFont
+      val backupFont = if (key == nonElasticFontText._1) backupNonElasticFont else backupElasticFont
       m.get(key) match {
         case Some(value) => {
           val parts = value.split(',')
           parts.length match {
-            case 1 => FontCC(parts(0).trim().stripPrefix("\"").stripSuffix("\""), defaultFont.size)
-            case 2 => FontCC(parts(0).trim().stripPrefix("\"").stripSuffix("\""), Try(parts(1).trim().toInt).toOption.getOrElse(defaultFont.size))
-            case _ => defaultFont
+            case 1 => FontCC(
+              {
+                val fontName = parts(0).trim().stripPrefix("\"").stripSuffix("\"")
+                if (checkFontExists(fontName)) fontName else backupFont.name
+              },
+              backupFont.size
+            )
+            case 2 => {
+              val fontName = parts(0).trim().stripPrefix("\"").stripSuffix("\"")
+              if (checkFontExists(fontName))
+                FontCC(fontName, Try(parts(1).trim().toInt).toOption.getOrElse(backupFont.size))
+              else
+                backupFont
+            }
+            case _ => backupFont
           }
         }
-        case None => defaultFont
+        case None => backupFont
       }
     }
 
