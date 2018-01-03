@@ -1,9 +1,10 @@
 # Elastic Notepad
 
-Wouldn't it be nice if we could use proportional fonts to write code? Well,
-thanks to [elastic tabstops](http://nickgravgaard.com/elastic-tabstops/), now
-we can. This editor implements that invention and should serve as a reference
-for anyone who wants to implement it in other editors.
+Wouldn't it be nice if we could use proportional fonts to write code and still
+have things line up? Well, thanks to
+[elastic tabstops](http://nickgravgaard.com/elastic-tabstops/), now we can. This
+editor implements that invention, and should serve as a reference for anyone who
+wants to implement it in other editors.
 
 The reference implementation of the core elastic tabstops algorithm can be
 found in [elasticTabstops.scala](src/main/scala/elasticTabstops.scala).
@@ -17,10 +18,28 @@ them installed, your system's default Serif and Monospaced fonts will be used
 instead, and you can change Elastic Notepad's settings to use whatever fonts
 you like, but I recommend trying it with these fonts first.
 
-You'll also need to have Java installed.
+Since Elastic Notepad is written in Scala, you'll also need to have Java
+installed to run it, and sbt installed if you want to build it.
 
 ## Running it
 
-You can run it like this:
+To run the jar file, use this:
 
 	java -jar ElasticNotepad.jar
+
+## Changing it
+
+When developing, it can be run with:
+
+	sbt run
+
+You can build a new jar file with:
+
+	sbt assembly
+
+## Ugly font rendering?
+
+Some systems do a poor job of rendering fonts in Java GUIs. On my Linux system
+I've added the following line to `$HOME/.profile` to fix this:
+
+	export _JAVA_OPTIONS="$_JAVA_OPTIONS -Dawt.useSystemAAFontSettings=on"
