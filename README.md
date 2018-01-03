@@ -12,9 +12,10 @@ found in [elasticTabstops.scala](src/main/scala/elasticTabstops.scala).
 
 The current version's settings default to using the fonts
 [Merriweather](https://fonts.google.com/specimen/Merriweather) and
-[Droid Sans Mono](https://fonts.google.com/specimen/Droid+Sans+Mono). You can
-change your settings of course, but I recommend installing these fonts so you
-can try them out.
+[Inconsolata](https://fonts.google.com/specimen/Inconsolata). If you don't have
+them installed, your system's default Serif and Monospaced fonts will be used
+instead, and you can change Elastic Notepad's settings to use whatever fonts
+you like, but I recommend trying it with these fonts first.
 
 You'll also need to have Java installed.
 

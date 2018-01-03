@@ -32,7 +32,7 @@ package object settings {
   }
 
   object Settings {
-    def defaults = Settings(FontCC("Merriweather", 25), FontCC("Droid Sans Mono", 23), 1.8, 0.625, 4, true, true)
+    def defaults = Settings(FontCC("Merriweather", 19), FontCC("Inconsolata", 23), 1.8, 0.625, 4, true, true)
 
     private val backupElasticFont = FontCC("Serif", 23)
     private val backupNonElasticFont = FontCC("Monospaced", 23)

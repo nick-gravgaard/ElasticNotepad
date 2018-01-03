@@ -37,7 +37,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     }
   }
 
-  scaleUiFonts(1.75f)
+  scaleUiFonts(1.5f)
 
   def makeWindowTitleText(path: String): String = {
     s"${if (modified) "* " else ""}$path - $appName v$appVersion"
