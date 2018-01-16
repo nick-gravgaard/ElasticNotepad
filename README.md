@@ -21,6 +21,11 @@ you like, but I recommend trying it with these fonts first.
 Since Elastic Notepad is written in Scala, you'll also need to have Java
 installed to run it, and sbt installed if you want to build it.
 
+On Windows at least, if you install Java for the sake of running this, it seems
+you'll need to restart your system before Java can use logical fonts properly.
+(So restart your system if you notice that toggling elastic mode off doesn't
+switch to a monospaced font and text doesn't *appear* lined up as a result.)
+
 ## Running it
 
 To run the jar file, use this:
@@ -35,7 +40,7 @@ When developing, it can be run with:
 
 You can build a new jar file with:
 
-	sbt assembly
+	sbt clean assembly
 
 ## Ugly font rendering?
 
