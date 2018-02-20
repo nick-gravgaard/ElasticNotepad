@@ -111,11 +111,13 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def loadFileAction(): Action = {
       val action = Action("Open...") {
-        chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
-          textPane.text = if (currentSettings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText
-          currentPath = path
-          modified = false
-          setWindowTitle(makeWindowTitleText(currentPath))
+        if (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to open another file?") == Result.Ok) {
+          chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
+            textPane.text = if (currentSettings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText
+            currentPath = path
+            modified = false
+            setWindowTitle(makeWindowTitleText(currentPath))
+          }
         }
       }
       action.accelerator = Some(KeyStroke.getKeyStroke(VK_O, CTRL_MASK))
