@@ -71,8 +71,11 @@ package object elasticTabstops {
     // a non-space followed by any number of chars that are either a non-space or a space followed by a non-space
     val cellTextRegEx = "[^ ](?:[^ ]| (?=[^ ]))*".r
 
+    // prefix each line with a non-whitespace character (as we want to treat the start of each line as a column of text)
+    val prefixedTextPerLine = text.split('\n').map("|" + _)
+
     // get maps for each line containing the position of text and the text itself
-    val matchesPerLine = text.split('\n').map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
+    val matchesPerLine = prefixedTextPerLine.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
 
     val allPositions = SortedSet(matchesPerLine.map(_.keys).toList.flatten: _*)
 
@@ -87,7 +90,10 @@ package object elasticTabstops {
       possCellsThisLine.take(possCellsThisLine.length - nofTrailingEmpties) ++ List.fill(nofTrailingEmpties)(None)
     }
 
-    // finally, transpose, replace empty columns with Nones, transpose back, remove Nones, and join
-    possCellsPerLine2.toList.transpose.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t")).mkString("\n")
+    // transpose, replace empty columns with Nones, transpose back, remove Nones, and join with tabs
+    val textPerLine = possCellsPerLine2.toList.transpose.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t"))
+
+    // finally, drop previously inserted non-whitespace character from each line and join with newlines
+    textPerLine.map(_.drop(1)).mkString("\n")
   }
 }
