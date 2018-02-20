@@ -7,7 +7,7 @@ scalaVersion := "2.12.4"
 assemblyJarName in assembly := "ElasticNotepad.jar"
 
 libraryDependencies ++= Seq(
-  "org.scala-lang.modules" %% "scala-swing" % "2.0.0"
+  "org.scala-lang.modules" %% "scala-swing" % "2.0.1"
 )
 
 lazy val root = (project in file(".")).
