@@ -43,10 +43,34 @@ object ElasticNotepad extends SimpleSwingApplication {
     s"${if (modified) "* " else ""}$path - $appName v$appVersion"
   }
 
-  def alignTabstops(doc: StyledDocument, fm: FontMetrics): Unit = {
-    val section = doc.getDefaultRootElement
-    val elements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
+  def getRecalcRange(textPerLine: List[String], startLineNum: Int, nofLines: Int): (Int, Int) = {
+    val indexedLines = textPerLine.zipWithIndex
+    val recalcStart = indexedLines.take(startLineNum).reverse.find(_._1.count(_ == '\t') == 0) match {
+      case None => 0
+      case Some((_, lineNum)) => lineNum
+    }
+    val recalcEnd = indexedLines.drop(startLineNum + nofLines).find(_._1.count(_ == '\t') == 0) match {
+      case None => indexedLines.length
+      case Some((_, lineNum)) => lineNum + 1
+    }
+    val recalcLength = recalcEnd - recalcStart
+    (recalcStart, recalcLength)
+  }
 
+  def alignTabstops(doc: StyledDocument, fm: FontMetrics, startAndLength: Option[(Int, Int)] = None): Unit = {
+    val section = doc.getDefaultRootElement
+
+    val allElements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
+    val allTextPerLine = for (el <- allElements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
+
+    val (recalcStart, recalcLength) = startAndLength match {
+      case None => (0, allTextPerLine.length)
+      case Some((lineNum, nofLines)) => {
+        getRecalcRange(allTextPerLine, lineNum, nofLines)
+      }
+    }
+
+    val elements = allElements.drop(recalcStart).take(recalcLength)
     val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
     val cellsPerLine = textPerLine.map(_.split('\t').toList)
     def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), currentSettings.emptyColumnWidthMinusGapPx) + currentSettings.minGapBetweenTextPx
@@ -54,7 +78,8 @@ object ElasticNotepad extends SimpleSwingApplication {
       val tabStops = tabstopPositionsThisLine.map(new TabStop(_))
       val attributes = new SimpleAttributeSet()
       StyleConstants.setTabSet(attributes, new TabSet(tabStops.toArray))
-      doc.setParagraphAttributes(element.getStartOffset, element.getEndOffset, attributes, false)
+      val length = element.getEndOffset - element.getStartOffset
+      doc.setParagraphAttributes(element.getStartOffset, length, attributes, false)
     }
   }
 
@@ -141,25 +166,31 @@ object ElasticNotepad extends SimpleSwingApplication {
     def setElasticTabstopsDocFilter(textPane: TextPane, fontMetrics: FontMetrics, onChange: () => Unit = { () => Unit }) = {
 
       object ElasticTabstopsDocFilter extends DocumentFilter {
-        override def insertString(fb: FilterBypass, offs: Int, str: String, a: AttributeSet) {
-          super.insertString(fb, offs, str, a)
+        override def insertString(fb: FilterBypass, offset: Int, string: String, attributes: AttributeSet) {
+          super.insertString(fb, offset, string, attributes)
           onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
-          alignTabstops(doc, fontMetrics)
+          val lineNum = doc.getDefaultRootElement.getElementIndex(offset)
+          val nofLines = string.count(_ == '\n') + 1
+          alignTabstops(doc, fontMetrics, Some(lineNum, nofLines))
         }
 
-        override def remove(fb: FilterBypass, offs: Int, length: Int) {
-          super.remove(fb, offs, length)
+        override def remove(fb: FilterBypass, offset: Int, length: Int) {
+          super.remove(fb, offset, length)
           onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
-          alignTabstops(doc, fontMetrics)
+          val lineNum = doc.getDefaultRootElement.getElementIndex(offset)
+          val nofLines = 1
+          alignTabstops(doc, fontMetrics, Some(lineNum, nofLines))
         }
 
-        override def replace(fb: FilterBypass, offs: Int, length: Int, str: String, a: AttributeSet) {
-          super.replace(fb, offs, length, str, a)
+        override def replace(fb: FilterBypass, offset: Int, length: Int, string: String, attributes: AttributeSet) {
+          super.replace(fb, offset, length, string, attributes)
           onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
-          alignTabstops(doc, fontMetrics)
+          val lineNum = doc.getDefaultRootElement.getElementIndex(offset)
+          val nofLines = string.count(_ == '\n') + 1
+          alignTabstops(doc, fontMetrics, Some(lineNum, nofLines))
         }
       }
       textPane.peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(ElasticTabstopsDocFilter)
