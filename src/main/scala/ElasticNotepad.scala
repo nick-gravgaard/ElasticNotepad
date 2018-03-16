@@ -290,8 +290,19 @@ object ElasticNotepad extends SimpleSwingApplication {
       val startOfLineOffset = root.getElement(lineNum).getStartOffset
       val posOnLine = caretPos - startOfLineOffset
       val lineTextToCaret = textPane.text.drop(startOfLineOffset).take(posOnLine)
-      val ignoringWhitespacePos = lineTextToCaret.filterNot(Set(' ', '\t')).length
-      (lineNum, ignoringWhitespacePos)
+      val minimalWhitespacePos = lineTextToCaret.replaceAll("[ \t]+", " ").length
+      (lineNum, minimalWhitespacePos)
+    }
+
+    def minimiseMultipleWhitespace(list: List[(Char, Int)]) : List[(Char, Int)] = list match {
+      case Nil => Nil
+      case h::t => h match {
+        case (' ', _) | ('\t', _) => {
+          val segment = list.takeWhile((cAndP: (Char, Int)) => cAndP._1 == ' ' || cAndP._1 == '\t')
+          (' ', segment.head._2) :: minimiseMultipleWhitespace(list.drop(segment.length))
+        }
+        case nonWhitespaceCAndP => nonWhitespaceCAndP :: minimiseMultipleWhitespace(list.drop(1))
+      }
     }
 
     def setCaretsLineNumAndPos(textPane: TextPane, lineNumAndPos: (Int, Int)): Unit = {
@@ -299,10 +310,10 @@ object ElasticNotepad extends SimpleSwingApplication {
       val root = textPane.peer.getDocument.getDefaultRootElement
       val startOfLineOffset = root.getElement(lineNum).getStartOffset
       val indexedLineText = textPane.text.split('\n').drop(lineNum).take(1).flatten.zipWithIndex
-      val nonWhitespaceOnly = indexedLineText.filter((cAndP: (Char, Int)) => cAndP._1 != ' ' && cAndP._1 != '\t')
-      val pos = nonWhitespaceOnly.lift(ignoringWhitespacePos) match {
+      val minimalWhitespaceOnly = minimiseMultipleWhitespace(indexedLineText.toList)
+      val pos = minimalWhitespaceOnly.lift(minimalWhitespacePos) match {
         case Some((_, pos)) => pos
-        case None => nonWhitespaceOnly.lastOption match {
+        case None => minimalWhitespaceOnly.lastOption match {
           case Some((_, pos)) => pos + 1
           case None => 0
         }
@@ -322,7 +333,6 @@ object ElasticNotepad extends SimpleSwingApplication {
     }
 
     def updateTextPaneText(textPane: TextPane, text: String) = {
-      // BUG: caret pos moves right if caret starts left of whitespace
       val caretsLineNumAndPos = getCaretsLineNumAndPos(textPane)
       textPane.text = text
       setCaretsLineNumAndPos(textPane, caretsLineNumAndPos)
