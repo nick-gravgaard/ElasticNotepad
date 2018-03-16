@@ -99,7 +99,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     def scratchFileAction(): Action = {
       val action = Action("Open scratch file") {
         if (currentPath != scratchFilePath.toString && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
-          setTextPaneText(textPane, loadScratchFile)
+          setNewTextPaneText(textPane, loadScratchFile)
           currentPath = scratchFilePath.toString
           modified = false
           setWindowTitle(makeWindowTitleText(currentPath))
@@ -113,7 +113,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       val action = Action("Open...") {
         if (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to open another file?") == Result.Ok) {
           chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
-            setTextPaneText(textPane, if (currentSettings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText)
+            setNewTextPaneText(textPane, if (currentSettings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText)
             currentPath = path
             modified = false
             setWindowTitle(makeWindowTitleText(currentPath))
@@ -201,7 +201,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     val textPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
     var elasticFontMetrics = new Canvas().getFontMetrics(new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size))
     setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
-    setTextPaneText(textPane, loadScratchFile)
+    setNewTextPaneText(textPane, loadScratchFile)
     modified = false
     setWindowTitle(makeWindowTitleText(currentPath))
 
@@ -252,7 +252,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     val toolbarPanel = new FlowPanel(Left)(elasticToggle, settingsToggle)
     val settingsTextPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
     setElasticTabstopsDocFilter(settingsTextPane, elasticFontMetrics)
-    setTextPaneText(settingsTextPane, currentSettingsText)
+    setNewTextPaneText(settingsTextPane, currentSettingsText)
     settingsTextPane.background = this.background
 
     val saveAndApplySettingsButton = new Button("Save and apply")
@@ -283,25 +283,50 @@ object ElasticNotepad extends SimpleSwingApplication {
     listenTo(saveAndApplySettingsButton)
     listenTo(revertToDefaultSettingsButton)
 
-    def getCaretsLineNum(textPane: TextPane): Int = {
-      val caretPosition = textPane.peer.getCaretPosition
+    def getCaretsLineNumAndPos(textPane: TextPane): (Int, Int) = {
+      val caretPos = textPane.peer.getCaretPosition
       val root = textPane.peer.getDocument.getDefaultRootElement
-      root.getElementIndex(caretPosition)
+      val lineNum = root.getElementIndex(caretPos)
+      val startOfLineOffset = root.getElement(lineNum).getStartOffset
+      val posOnLine = caretPos - startOfLineOffset
+      val lineTextToCaret = textPane.text.drop(startOfLineOffset).take(posOnLine)
+      val ignoringWhitespacePos = lineTextToCaret.filterNot(Set(' ', '\t')).length
+      (lineNum, ignoringWhitespacePos)
     }
 
-    def setCaretsLineNum(textPane: TextPane, lineNum: Int): Unit = {
+    def setCaretsLineNumAndPos(textPane: TextPane, lineNumAndPos: (Int, Int)): Unit = {
+      val (lineNum, minimalWhitespacePos) = lineNumAndPos
       val root = textPane.peer.getDocument.getDefaultRootElement
       val startOfLineOffset = root.getElement(lineNum).getStartOffset
-      textPane.peer.setCaretPosition(startOfLineOffset)
+      val indexedLineText = textPane.text.split('\n').drop(lineNum).take(1).flatten.zipWithIndex
+      val nonWhitespaceOnly = indexedLineText.filter((cAndP: (Char, Int)) => cAndP._1 != ' ' && cAndP._1 != '\t')
+      val pos = nonWhitespaceOnly.lift(ignoringWhitespacePos) match {
+        case Some((_, pos)) => pos
+        case None => nonWhitespaceOnly.lastOption match {
+          case Some((_, pos)) => pos + 1
+          case None => 0
+        }
+      }
+      textPane.peer.setCaretPosition(startOfLineOffset + pos)
     }
 
-    def setTextPaneText(textPane: TextPane, text: String, keepLineNum: Boolean = false) = {
-      val caretsLineNum = keepLineNum match {
-        case true => getCaretsLineNum(textPane)
-        case false => 0
-      }
+    def setTextPaneText(textPane: TextPane, text: String) = {
       textPane.text = text
-      setCaretsLineNum(textPane, caretsLineNum)
+      textPane.peer.grabFocus
+    }
+
+    def setNewTextPaneText(textPane: TextPane, text: String) = {
+      textPane.text = text
+      textPane.peer.setCaretPosition(0)
+      textPane.peer.grabFocus
+    }
+
+    def updateTextPaneText(textPane: TextPane, text: String) = {
+      // BUG: caret pos moves right if caret starts left of whitespace
+      val caretsLineNumAndPos = getCaretsLineNumAndPos(textPane)
+      textPane.text = text
+      setCaretsLineNumAndPos(textPane, caretsLineNumAndPos)
+      textPane.peer.grabFocus
     }
 
     def setFont(textPane: TextPane, fontDetails: FontCC) = {
@@ -316,14 +341,14 @@ object ElasticNotepad extends SimpleSwingApplication {
       elasticToggle.text = "Elastic on"
       setFont(textPane, currentSettings.elasticFont)
       setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
-      setTextPaneText(textPane, spacesToTabs(textPane.text), true)
+      updateTextPaneText(textPane, spacesToTabs(textPane.text))
     }
 
     def turnElasticTabstopsOff = {
       elasticToggle.text = "Elastic off"
       setFont(textPane, currentSettings.nonElasticFont)
       textPane.peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(new DocumentFilter)
-      setTextPaneText(textPane, tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize), true)
+      updateTextPaneText(textPane, tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize))
     }
 
     reactions += {
@@ -350,7 +375,7 @@ object ElasticNotepad extends SimpleSwingApplication {
         if (elasticToggle.selected) {
           setFont(textPane, currentSettings.elasticFont)
           setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
-          setTextPaneText(textPane, textPane.text, true) // force update of tabstop positions
+          setTextPaneText(textPane, textPane.text) // force update of tabstop positions
           modified = false
           setWindowTitle(makeWindowTitleText(currentPath))
         } else {
