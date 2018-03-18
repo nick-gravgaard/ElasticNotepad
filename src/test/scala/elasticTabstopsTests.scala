@@ -16,6 +16,14 @@ class ElasticTabstopsSpec extends FlatSpec {
       "xxxxxxx  y"
     ).mkString("\n")
     )
+    assert(tabsToSpaces(List(
+      "\t",
+      "xxxxxxx"
+    ).mkString("\n"), 4) == List(
+      "",
+      "xxxxxxx"
+    ).mkString("\n")
+    )
   }
 
   "Spaces" should "be replaced by tabs correctly" in {
@@ -28,6 +36,14 @@ class ElasticTabstopsSpec extends FlatSpec {
     ).mkString("\n")) == List(
       "\ty",
       "xxxxxxx\ty"
+    ).mkString("\n")
+    )
+    assert(spacesToTabs(List(
+      "       ",
+      "xxxxxxx"
+    ).mkString("\n")) == List(
+      "",
+      "xxxxxxx"
     ).mkString("\n")
     )
   }

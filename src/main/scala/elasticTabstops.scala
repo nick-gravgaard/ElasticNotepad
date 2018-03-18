@@ -20,8 +20,10 @@ package object elasticTabstops {
 
     val maxedWidthsPerColumn = for (c <- 0 until maxNofCells)
       yield maxConsecutive(for (textWidthsThisLine <- textWidthsPerLine)
-        yield if (c < textWidthsThisLine.indices.last)
-          Option(textWidthsThisLine(c)) else None)
+        yield textWidthsThisLine.indices.lastOption.flatMap(
+          (lastIndex: Int) => if (c < lastIndex) Option(textWidthsThisLine(c)) else None
+        )
+      )
 
     for (maxedWidthsThisLine <- maxedWidthsPerColumn.toList.transpose)
       yield maxedWidthsThisLine.takeWhile(_.isDefined).map(_.get)
