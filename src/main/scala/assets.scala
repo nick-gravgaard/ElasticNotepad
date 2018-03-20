@@ -1,24 +1,37 @@
 package object assets {
   val InitialText = StringContext.treatEscapes(
-    """This example text appears in your scratch file after installation so you can play with elastic tabstops.
+    """
       |
-      |int someDemoCode(\tint fred,
-      |\tint wilma)
+      |\t--------|\t--------------------------\t|--------
+      |\t--------|\tWelcome to Elastic Notepad\t|--------
+      |\t--------|\t--------------------------\t|--------
+      |\t--------|\t\t|--------
+      |\t--------|\tThis is your scratch file.\t|--------
+      |\t--------|\tIt's initialised with this\t|--------
+      |\t--------|\ttext so you can play with\t|--------
+      |\t--------|\telastic tabstops.\t|--------
+      |\t--------|\t\t|--------
+      |\t--------|\t--------------------------\t|--------
+      |
+      |
+      |int someDemoCode(\tint start,
+      |\tint length)
       |{
-      |\tx();\t/* try making\t*/
-      |\tprintf(\"hello!\\");\t/* this comment\t*/
-      |\tdoSomethingComplicated();\t/* a bit longer\t*/
-      |\tfor (i = start; i < end; ++i)
+      |\tx()\t/* try making\t*/
+      |\tprint(\"hello!\")\t/* this comment\t*/
+      |\tdoSomethingComplicated()\t/* a bit longer\t*/
+      |\tfor (i in range(start, length))
       |\t{
-      |\t\tif (isPrime(i))
+      |\t\tif (isValid(i))
       |\t\t{
-      |\t\t\t++numPrimes;
+      |\t\t\tcount++
       |\t\t}
       |\t}
-      |\treturn numPrimes;
+      |\treturn count
       |}
       |
-      |Elastic tabstops is excellent for editing tables and TSV files too.
+      |
+      |You can use elastic tabstops with tables and TSV files too
       |
       |Title\tAuthor\tPublisher\tYear
       |Generation X\tDouglas Coupland\tAbacus\t1995
