@@ -321,11 +321,6 @@ object ElasticNotepad extends SimpleSwingApplication {
       textPane.peer.setCaretPosition(startOfLineOffset + pos)
     }
 
-    def setTextPaneText(textPane: TextPane, text: String) = {
-      textPane.text = text
-      textPane.peer.grabFocus
-    }
-
     def setNewTextPaneText(textPane: TextPane, text: String) = {
       textPane.text = text
       textPane.peer.setCaretPosition(0)
@@ -385,7 +380,7 @@ object ElasticNotepad extends SimpleSwingApplication {
         if (elasticToggle.selected) {
           setFont(textPane, currentSettings.elasticFont)
           setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
-          setTextPaneText(textPane, textPane.text) // force update of tabstop positions
+          updateTextPaneText(textPane, textPane.text) // force update of tabstop positions
           modified = false
           setWindowTitle(makeWindowTitleText(currentPath))
         } else {
