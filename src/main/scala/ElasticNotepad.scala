@@ -8,7 +8,7 @@ import javax.swing.event.{DocumentEvent, UndoableEditEvent, UndoableEditListener
 import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
 
 import buildInfo.BuildInfo.{name => appName, version => appVersion}
-import elasticTabstops.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
+import elasticTabstops.{split, splitAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
 
@@ -72,7 +72,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     val elements = allElements.drop(recalcStart).take(recalcLength)
     val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
-    val cellsPerLine = textPerLine.map(_.split('\t').toList)
+    val cellsPerLine = textPerLine.map(splitAndStrip(_, '\t').toList)
     def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), currentSettings.emptyColumnWidthMinusGapPx) + currentSettings.minGapBetweenTextPx
     for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements)) {
       val tabStops = tabstopPositionsThisLine.map(new TabStop(_))
@@ -309,7 +309,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       val (lineNum, minimalWhitespacePos) = lineNumAndPos
       val root = textPane.peer.getDocument.getDefaultRootElement
       val startOfLineOffset = root.getElement(lineNum).getStartOffset
-      val indexedLineText = textPane.text.split('\n').drop(lineNum).take(1).flatten.zipWithIndex
+      val indexedLineText = split(textPane.text, '\n').drop(lineNum).take(1).flatten.zipWithIndex
       val minimalWhitespaceOnly = minimiseMultipleWhitespace(indexedLineText.toList)
       val pos = minimalWhitespaceOnly.lift(minimalWhitespacePos) match {
         case Some((_, pos)) => pos

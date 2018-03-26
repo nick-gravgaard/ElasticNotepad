@@ -2,6 +2,10 @@ import scala.collection.SortedSet
 
 package object elasticTabstops {
 
+  // convenience functions to wrap Java's unintuitive split method
+  def split(string: String, char: Char) = string.split(char.toString, -1)  // -1 so we get trailing empty strings
+  def splitAndStrip(string: String, char: Char) = string.split(char)
+
   def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
     // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
     // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
@@ -42,7 +46,7 @@ package object elasticTabstops {
   def tabsToSpaces(text: String, nofIndentSpaces: Int): String = {
     val cellPaddingWidthSpaces = 2 // must be at least 2 so we can convert back to tabs
     val cellMinimumWidthSpaces = nofIndentSpaces - cellPaddingWidthSpaces
-    val cellsPerLine = text.split('\n').map(_.split('\t').toList).toList
+    val cellsPerLine = split(text, '\n').map(splitAndStrip(_, '\t').toList).toList
     def calcCellWidth(text: String): Int = math.max(text.length, cellMinimumWidthSpaces) + cellPaddingWidthSpaces
     val maxedWidthsPerLine = calcMaxedWidthsPerLine(measureWidthsPerLine(cellsPerLine, calcCellWidth))
 
@@ -74,7 +78,7 @@ package object elasticTabstops {
     val cellTextRegEx = "[^ ](?:[^ ]| (?=[^ ]))*".r
 
     // prefix each line with a non-whitespace character (as we want to treat the start of each line as a column of text)
-    val prefixedTextPerLine = text.split('\n').map("|" + _)
+    val prefixedTextPerLine = split(text, '\n').map("|" + _)
 
     // get maps for each line containing the position of text and the text itself
     val matchesPerLine = prefixedTextPerLine.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
