@@ -112,7 +112,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     def loadFileAction(): Action = {
       val action = Action("Open...") {
         if (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to open another file?") == Result.Ok) {
-          chooseAndLoadFile(currentSettings.filesEndWithNewline) foreach { case (loadedText, path) =>
+          chooseAndLoadFile foreach { case (loadedText, path) =>
             setNewTextPaneText(textPane, if (currentSettings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText)
             currentPath = path
             modified = false
@@ -127,7 +127,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     def saveFileAction(): Action = {
       val action = Action("Save") {
         val textToSave = if (currentSettings.filesAreNonElastic) tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize) else textPane.text
-        saveFile(textToSave, currentSettings.filesEndWithNewline, currentPath)
+        saveFile(textToSave, currentPath)
         modified = false
         setWindowTitle(makeWindowTitleText(currentPath))
       }
@@ -138,7 +138,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     def saveFileAsAction(): Action = {
       val action = Action("Save as...") {
         val textToSave = if (currentSettings.filesAreNonElastic) tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize) else textPane.text
-        saveFileAs(textToSave, currentSettings.filesEndWithNewline) foreach { path =>
+        saveFileAs(textToSave) foreach { path =>
           currentPath = path
           modified = false
           setWindowTitle(makeWindowTitleText(currentPath))

@@ -49,11 +49,11 @@ package object fileHandling {
             Failure(exception)
           }
         }
-        saveFile(assets.InitialText, true, scratchFilePath.toString)
+        saveFile(assets.InitialText, scratchFilePath.toString)
         assets.InitialText
       }
       case true => {
-        loadFile(Source.fromFile(scratchFilePath.toString, "UTF-8"), true) match {
+        loadFile(Source.fromFile(scratchFilePath.toString, "UTF-8")) match {
           case Right(fileContents) => {
             fileContents
           }
@@ -67,11 +67,12 @@ package object fileHandling {
   }
 
 
-  def loadFile(fileSource: Source, trimNewlines: Boolean): Either[String, String] = {
+  def loadFile(fileSource: Source): Either[String, String] = {
     try {
       alwaysClose(fileSource) { handledFileSource =>
         val text = handledFileSource.getLines.mkString("\n")
-        Right(if (trimNewlines) text.replaceAll("X+$", "") else text)
+        // we don't include the last newline in the buffer's text
+        Right(if (text.lastOption == Some('\n')) text.dropRight(1) else text)
       }
     } catch {
       case e: FileNotFoundException => Left(s"Can't find ${fileSource.descr}\n\n[${e.getMessage}]")
@@ -80,7 +81,7 @@ package object fileHandling {
     }
   }
 
-  def chooseAndLoadFile(trimNewlines: Boolean): Option[(String, String)] = {
+  def chooseAndLoadFile: Option[(String, String)] = {
     val dialog = new FileDialog(null.asInstanceOf[FileDialog], "Load file", FileDialog.LOAD)
     dialog.setVisible(true)
     if (dialog.getFile == null) {
@@ -88,7 +89,7 @@ package object fileHandling {
     } else {
       val path = dialog.getDirectory + dialog.getFile
 
-      loadFile(Source.fromFile(path, "UTF-8"), trimNewlines) match {
+      loadFile(Source.fromFile(path, "UTF-8")) match {
         case Right(fileContents) => Some(fileContents, path)
         case Left(errorMessage) => {
           Dialog.showMessage(null, errorMessage)
@@ -98,11 +99,11 @@ package object fileHandling {
     }
   }
 
-  def saveFile(text: String, lastCharIsNewline: Boolean, path: String): Boolean = {
-    val finalText = if (text.last == '\n') text else text + '\n'
+  def saveFile(text: String, path: String): Boolean = {
     try {
       alwaysClose(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"))) { writer =>
-        writer.write(finalText)
+        // we always add a newline to the end of the saved file
+        writer.write(text + '\n')
         return true
       }
     } catch {
@@ -112,12 +113,12 @@ package object fileHandling {
     false
   }
 
-  def saveFileAs(text: String, lastCharIsNewline: Boolean): Option[String] = {
+  def saveFileAs(text: String): Option[String] = {
     val dialog = new FileDialog(null.asInstanceOf[FileDialog], "Save file", FileDialog.SAVE)
     dialog.setVisible(true)
     if (dialog.getFile != null) {
       val path = dialog.getDirectory + dialog.getFile
-      if (saveFile(text, lastCharIsNewline, path))
+      if (saveFile(text, path))
         return Some(path)
     }
     None

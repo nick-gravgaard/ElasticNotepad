@@ -18,8 +18,7 @@ package object settings {
                       emptyColumnWidth: Double,
                       minGapBetweenText: Double,
                       nonElasticTabSize: Int,
-                      filesAreNonElastic: Boolean,
-                      filesEndWithNewline: Boolean) {
+                      filesAreNonElastic: Boolean) {
 
     val (emptyColumnWidthMinusGapPx, minGapBetweenTextPx) = {
       val fontMetrics = new Canvas().getFontMetrics(new Font(elasticFont.name, Font.PLAIN, elasticFont.size))
@@ -32,7 +31,7 @@ package object settings {
   }
 
   object Settings {
-    def defaults = Settings(FontCC("Merriweather", 19), FontCC("Inconsolata", 23), 1.8, 0.625, 4, true, true)
+    def defaults = Settings(FontCC("Merriweather", 19), FontCC("Inconsolata", 23), 1.8, 0.625, 4, true)
 
     private val backupElasticFont = FontCC("Serif", 23)
     private val backupNonElasticFont = FontCC("Monospaced", 23)
@@ -43,7 +42,6 @@ package object settings {
     private val minGapBetweenTextText = ("Smallest gap between text", "Measured in multiples of line height (ems)")
     private val nonElasticTabSizeText = ("Non-elastic tab size", "The indent size in non-elastic files")
     private val filesAreNonElasticText = ("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")
-    private val filesEndWithNewlineText = ("Exactly one newline at end of file", "Many tools need all lines to be terminated by a newline")
 
     def defaultSettingsText: String = {
       val cellsPerLine = List(
@@ -52,8 +50,7 @@ package object settings {
         (defaults.emptyColumnWidth.toString, emptyColumnWidthText),
         (defaults.minGapBetweenText.toString, minGapBetweenTextText),
         (defaults.nonElasticTabSize.toString, nonElasticTabSizeText),
-        (defaults.filesAreNonElastic.toString, filesAreNonElasticText),
-        (defaults.filesEndWithNewline.toString, filesEndWithNewlineText)
+        (defaults.filesAreNonElastic.toString, filesAreNonElasticText)
       )
       cellsPerLine.map { case (value, (key, description)) => s"$key:\t$value\t| $description" }.mkString("\n")
     }
@@ -69,11 +66,11 @@ package object settings {
               Failure(exception)
             }
           }
-          saveFile(defaultSettingsText, true, settingsFilePath.toString)
+          saveFile(defaultSettingsText, settingsFilePath.toString)
           (defaults, defaultSettingsText)
         }
         case true => {
-          loadFile(Source.fromFile(settingsFilePath.toString, "UTF-8"), true) match {
+          loadFile(Source.fromFile(settingsFilePath.toString, "UTF-8")) match {
             case Right(fileContents) => {
               (fromString(fileContents), fileContents)
             }
@@ -88,7 +85,7 @@ package object settings {
 
     def saveAndParse(text: String): Settings = {
       createAppDir
-      saveFile(text, true, settingsFilePath.toString)
+      saveFile(text, settingsFilePath.toString)
       fromString(text)
     }
 
@@ -138,8 +135,7 @@ package object settings {
         m.get(emptyColumnWidthText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.emptyColumnWidth),
         m.get(minGapBetweenTextText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.minGapBetweenText),
         m.get(nonElasticTabSizeText._1).flatMap(i => Try(i.toInt).toOption).getOrElse(defaults.nonElasticTabSize),
-        m.get(filesAreNonElasticText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesAreNonElastic),
-        m.get(filesEndWithNewlineText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesEndWithNewline)
+        m.get(filesAreNonElasticText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesAreNonElastic)
       )
     }
 
