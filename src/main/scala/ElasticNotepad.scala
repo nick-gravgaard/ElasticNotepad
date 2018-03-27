@@ -99,7 +99,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     def scratchFileAction(): Action = {
       val action = Action("Open scratch file") {
         if (currentPath != scratchFilePath.toString && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
-          setNewTextPaneText(textPane, loadScratchFile)
+          setNewTextPaneText(textPane, if (currentSettings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
           currentPath = scratchFilePath.toString
           modified = false
           setWindowTitle(makeWindowTitleText(currentPath))
@@ -201,7 +201,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     val textPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
     var elasticFontMetrics = new Canvas().getFontMetrics(new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size))
     setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
-    setNewTextPaneText(textPane, loadScratchFile)
+    setNewTextPaneText(textPane, if (currentSettings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
     modified = false
     setWindowTitle(makeWindowTitleText(currentPath))
 
