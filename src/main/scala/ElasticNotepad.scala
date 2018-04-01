@@ -1,4 +1,4 @@
-import java.awt.{Canvas, Dimension, Font, FontMetrics}
+import java.awt.{Canvas, Color, Dimension, Font, FontMetrics}
 import java.awt.Event.{CTRL_MASK, SHIFT_MASK}
 import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S, VK_Z}
 import javax.swing.text.DocumentFilter.FilterBypass
@@ -8,6 +8,7 @@ import javax.swing.event.{DocumentEvent, UndoableEditEvent, UndoableEditListener
 import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
 
 import buildInfo.BuildInfo.{name => appName, version => appVersion}
+import com.bulenkov.darcula.DarculaLaf
 import elasticTabstops.{split, splitAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
@@ -24,7 +25,7 @@ object ElasticNotepad extends SimpleSwingApplication {
   var currentPath = scratchFilePath.toString
   var modified = false
 
-  UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
+  UIManager.setLookAndFeel(new DarculaLaf)
 
   def scaleUiFonts(multiplier: Float) = {
     UIManager.getLookAndFeelDefaults.keySet.forEach { key =>
@@ -198,7 +199,10 @@ object ElasticNotepad extends SimpleSwingApplication {
       textPane.peer.getDocument().asInstanceOf[AbstractDocument].setDocumentFilter(ElasticTabstopsDocFilter)
     }
 
-    val textPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
+    val textPane = new TextPane {
+      font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size)
+      background = new Color(43, 43, 43)  // taken from Intellij IDEA
+    }
     var elasticFontMetrics = new Canvas().getFontMetrics(new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size))
     setElasticTabstopsDocFilter(textPane, elasticFontMetrics, onTextPaneChangeSetModified)
     setNewTextPaneText(textPane, if (currentSettings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
@@ -253,7 +257,6 @@ object ElasticNotepad extends SimpleSwingApplication {
     val settingsTextPane = new TextPane { font = new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size) }
     setElasticTabstopsDocFilter(settingsTextPane, elasticFontMetrics)
     setNewTextPaneText(settingsTextPane, currentSettingsText)
-    settingsTextPane.background = this.background
 
     val saveAndApplySettingsButton = new Button("Save and apply")
     val revertToDefaultSettingsButton = new Button("Revert to defaults")
@@ -336,6 +339,8 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def setFont(textPane: TextPane, fontDetails: FontCC) = {
       val attributes = new SimpleAttributeSet
+      StyleConstants.setBackground(attributes, textPane.background)
+      StyleConstants.setForeground(attributes, textPane.foreground)
       StyleConstants.setFontFamily(attributes, fontDetails.name)
       StyleConstants.setFontSize(attributes, fontDetails.size)
       val doc = textPane.peer.getDocument.asInstanceOf[StyledDocument]
