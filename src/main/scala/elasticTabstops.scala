@@ -1,5 +1,6 @@
 import scala.collection.SortedSet
 
+
 package object elasticTabstops {
 
   // convenience functions to wrap Java's unintuitive split method
@@ -7,6 +8,7 @@ package object elasticTabstops {
   def splitAndStrip(string: String, char: Char) = string.split(char)
 
   def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
+    // Segments are runs of Some. Replace each item in a segment with the highest value in that segment.
     // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
     // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
     case Nil => Nil
@@ -56,7 +58,7 @@ package object elasticTabstops {
   }
 
   def replaceEmptyRuns(list: List[Option[String]]) : List[Option[String]] = list match {
-    // split into segments separated by None, and replace segments with Nones if they do not contain any text
+    // Segments are runs of Some. Replace each item in a segment with None if none of them contain any text.
     // scala>              replaceEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
     // res1: List[Option[Option[String]]] = List(Some(""), Some("a"), None, None, None))
     case Nil => Nil

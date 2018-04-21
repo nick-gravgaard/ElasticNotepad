@@ -1,11 +1,11 @@
 import java.awt.{Canvas, Font, GraphicsEnvironment}
 import java.nio.file.Files
-
-import fileHandling.{createAppDir, loadFile, saveFile, settingsFilePath}
-
 import scala.io.Source
 import scala.swing.Dialog
 import scala.util.{Failure, Try}
+
+import fileHandling.{createAppDir, loadFile, saveFile, settingsFilePath}
+
 
 package object settings {
 
@@ -18,17 +18,7 @@ package object settings {
                       emptyColumnWidth: Double,
                       minGapBetweenText: Double,
                       nonElasticTabSize: Int,
-                      filesAreNonElastic: Boolean) {
-
-    val (emptyColumnWidthMinusGapPx, minGapBetweenTextPx) = {
-      val fontMetrics = new Canvas().getFontMetrics(new Font(elasticFont.name, Font.PLAIN, elasticFont.size))
-      val em = fontMetrics.getHeight // more accurate than the font's point size (with Merriweather at least)
-      val emptyColumnWidthPx = (emptyColumnWidth * em).toInt
-      val minGapBetweenTextPx = (minGapBetweenText * em).toInt
-      val emptyColumnWidthMinusGapPx = emptyColumnWidthPx - minGapBetweenTextPx
-      (emptyColumnWidthMinusGapPx, minGapBetweenTextPx)
-    }
-  }
+                      filesAreNonElastic: Boolean)
 
   object Settings {
     def defaults = Settings(FontCC("Merriweather", 19), FontCC("Inconsolata", 23), 1.8, 0.625, 4, true)

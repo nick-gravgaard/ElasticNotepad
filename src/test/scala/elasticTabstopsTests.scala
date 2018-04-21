@@ -2,6 +2,7 @@ import org.scalatest.FlatSpec
 
 import elasticTabstops.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 
+
 class ElasticTabstopsSpec extends FlatSpec {
 
   "Tabs" should "be replaced by spaces correctly" in {

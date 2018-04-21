@@ -1,11 +1,11 @@
 import java.awt.FileDialog
 import java.io.{BufferedWriter, FileNotFoundException, FileOutputStream, IOException, OutputStreamWriter}
 import java.nio.file.{Files, Path, Paths}
-
 import scala.io.Source
 import scala.swing.Dialog
 import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
+
 
 package object fileHandling {
 
