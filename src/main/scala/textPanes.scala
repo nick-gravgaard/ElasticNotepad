@@ -262,7 +262,6 @@ package object textPanes {
           // elastic on
           fm = new Canvas().getFontMetrics(elasticFont)
           setFont(elasticFont)
-          println(elasticFont.getSize)
           setElasticTabstopsDocFilter()
           updateText(spacesToTabs(this.text))
         } else {
@@ -288,7 +287,6 @@ package object textPanes {
       if (_elastic) {
         fm = new Canvas().getFontMetrics(elasticFont)
         setFont(elasticFont)
-        println(elasticFont.getSize)
         setElasticTabstopsDocFilter()
         updateText(this.text)  // force update of tabstop positions
       } else {
