@@ -12,7 +12,7 @@ import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, Ma
 import com.bulenkov.darcula.DarculaLaf
 
 import elasticTabstops.{spacesToTabs, tabsToSpaces}
-import fileHandling.{chooseAndLoadFile, loadScratchFile, saveFile, saveFileAs, scratchFilePath}
+import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
 import textPanes.{EditorTextPane, ElasticTextPane}
 
@@ -50,10 +50,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def scratchFileAction(): Action = {
       val action = Action("Open scratch file") {
-        if (textPane.currentPath != scratchFilePath.toString && (!textPane.modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
-          textPane.currentPath = scratchFilePath.toString
-          textPane.setNewText(if (currentSettings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
-        }
+        textPane.openScratchFile(scratchFilePath, currentSettings)
       }
       action.accelerator = Some(KeyStroke.getKeyStroke(VK_N, CTRL_MASK))
       action
@@ -61,12 +58,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def loadFileAction(): Action = {
       val action = Action("Open...") {
-        if (!textPane.modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to open another file?") == Result.Ok) {
-          chooseAndLoadFile foreach { case (loadedText, path) =>
-            textPane.currentPath = path
-            textPane.setNewText(if (currentSettings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText)
-          }
-        }
+        textPane.openFile(currentSettings)
       }
       action.accelerator = Some(KeyStroke.getKeyStroke(VK_O, CTRL_MASK))
       action
@@ -74,9 +66,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def saveFileAction(): Action = {
       val action = Action("Save") {
-        val textToSave = if (currentSettings.filesAreNonElastic) tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize) else textPane.text
-        saveFile(textToSave, textPane.currentPath)
-        textPane.modified = false
+        textPane.saveFile(currentSettings)
       }
       action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, CTRL_MASK))
       action
@@ -84,11 +74,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     def saveFileAsAction(): Action = {
       val action = Action("Save as...") {
-        val textToSave = if (currentSettings.filesAreNonElastic) tabsToSpaces(textPane.text, currentSettings.nonElasticTabSize) else textPane.text
-        saveFileAs(textToSave) foreach { path =>
-          textPane.currentPath = path
-          textPane.modified = false
-        }
+        textPane.saveFileAs(currentSettings)
       }
       action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, CTRL_MASK | SHIFT_MASK))
       action
@@ -108,11 +94,10 @@ object ElasticNotepad extends SimpleSwingApplication {
       new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
       currentSettings.emptyColumnWidth, currentSettings.minGapBetweenText,
       new Font(currentSettings.nonElasticFont.name, Font.PLAIN, currentSettings.nonElasticFont.size),
-      currentSettings.nonElasticTabSize, scratchFilePath.toString
+      currentSettings.nonElasticTabSize, currentSettings.filesAreNonElastic, scratchFilePath.toString
     ) {
       background = new Color(43, 43, 43)  // taken from Intellij IDEA
     }
-    textPane.setNewText(if (currentSettings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
 
     val elasticToggle = new ToggleButton { text = "Elastic on"; selected = true }
     val settingsToggle = new ToggleButton { text = "Settings"; selected = false }

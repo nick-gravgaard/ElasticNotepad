@@ -4,7 +4,7 @@ import scala.io.Source
 import scala.swing.Dialog
 import scala.util.{Failure, Try}
 
-import fileHandling.{createAppDir, loadFile, saveFile, settingsFilePath}
+import fileHandling.{createAppDir, loadTextFile, saveTextFile, settingsFilePath}
 
 
 package object settings {
@@ -56,11 +56,11 @@ package object settings {
               Failure(exception)
             }
           }
-          saveFile(defaultSettingsText, settingsFilePath.toString)
+          saveTextFile(defaultSettingsText, settingsFilePath.toString)
           (defaults, defaultSettingsText)
         }
         case true => {
-          loadFile(Source.fromFile(settingsFilePath.toString, "UTF-8")) match {
+          loadTextFile(Source.fromFile(settingsFilePath.toString, "UTF-8")) match {
             case Right(fileContents) => {
               (fromString(fileContents), fileContents)
             }
@@ -75,7 +75,7 @@ package object settings {
 
     def saveAndParse(text: String): Settings = {
       createAppDir
-      saveFile(text, settingsFilePath.toString)
+      saveTextFile(text, settingsFilePath.toString)
       fromString(text)
     }
 

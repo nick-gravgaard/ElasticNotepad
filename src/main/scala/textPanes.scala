@@ -1,17 +1,21 @@
 import java.awt.Event.{CTRL_MASK, SHIFT_MASK}
 import java.awt.event.KeyEvent.VK_Z
 import java.awt.{Canvas, Color, Font, FontMetrics}
+import java.nio.file.Path
 import javax.swing.{JFrame, KeyStroke, SwingUtilities}
+import scala.swing.Dialog.Result
 import javax.swing.event.{DocumentEvent, UndoableEditEvent}
 import javax.swing.text._
 import javax.swing.text.DocumentFilter.FilterBypass
 import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
-import scala.swing.{Action, TextPane}
+import scala.swing.{Action, Dialog, TextPane}
 import scala.swing.event.{Key, KeyPressed}
 
 import buildInfo.BuildInfo.{name => appName, version => appVersion}
 
 import elasticTabstops.{split, splitAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
+import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs}
+import settings.{FontCC, Settings}
 
 
 package object textPanes {
@@ -250,8 +254,11 @@ package object textPanes {
   }
 
   class EditorTextPane(_elasticFont: Font, _emptyColumnWidth: Double, _minGapBetweenText: Double,
-                       var nonElasticFont: Font, var nonElasticTabSize: Int, var currentPath: String)
+                       var nonElasticFont: Font, var nonElasticTabSize: Int, var filesAreNonElastic: Boolean,
+                       var currentPath: String)
     extends ElasticTextPane(_elasticFont, _emptyColumnWidth, _minGapBetweenText) {
+
+    setNewText(if (filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
 
     private var _elastic = true
     def elastic = _elastic
@@ -294,7 +301,7 @@ package object textPanes {
       }
     }
 
-    private var _modified = true
+    private var _modified = false
     def modified = _modified
     def modified_=(newModified: Boolean) {
       if (newModified != _modified) {
@@ -303,10 +310,40 @@ package object textPanes {
       }
     }
 
-    def updateWindowTitle() = {
+    def updateWindowTitle(): Unit = {
       val frame = SwingUtilities.getWindowAncestor(peer).asInstanceOf[JFrame]
       if (frame != null)
         frame.setTitle(s"${if (modified) "* " else ""}$currentPath - $appName v$appVersion")
+    }
+
+    def openScratchFile(scratchFilePath: Path, settings: Settings): Unit = {
+      if (currentPath != scratchFilePath.toString && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
+        currentPath = scratchFilePath.toString
+        setNewText(if (settings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
+      }
+    }
+
+    def openFile(settings: Settings): Unit = {
+      if (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to open another file?") == Result.Ok) {
+        chooseAndLoadTextFile foreach { case (loadedText, path) =>
+          currentPath = path
+          setNewText(if (settings.filesAreNonElastic) spacesToTabs(loadedText) else loadedText)
+        }
+      }
+    }
+
+    def saveFile(settings: Settings): Unit = {
+      val textToSave = if (settings.filesAreNonElastic) tabsToSpaces(text, settings.nonElasticTabSize) else text
+      saveTextFile(textToSave, currentPath)
+      modified = false
+    }
+
+    def saveFileAs(settings: Settings): Unit = {
+      val textToSave = if (settings.filesAreNonElastic) tabsToSpaces(text, settings.nonElasticTabSize) else text
+      saveTextFileAs(textToSave) foreach { path =>
+        currentPath = path
+        modified = false
+      }
     }
 
     override def onChange(): Unit = {

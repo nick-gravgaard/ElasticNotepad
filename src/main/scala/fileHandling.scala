@@ -49,11 +49,11 @@ package object fileHandling {
             Failure(exception)
           }
         }
-        saveFile(assets.InitialText, scratchFilePath.toString)
+        saveTextFile(assets.InitialText, scratchFilePath.toString)
         assets.InitialText
       }
       case true => {
-        loadFile(Source.fromFile(scratchFilePath.toString, "UTF-8")) match {
+        loadTextFile(Source.fromFile(scratchFilePath.toString, "UTF-8")) match {
           case Right(fileContents) => {
             fileContents
           }
@@ -67,7 +67,7 @@ package object fileHandling {
   }
 
 
-  def loadFile(fileSource: Source): Either[String, String] = {
+  def loadTextFile(fileSource: Source): Either[String, String] = {
     try {
       alwaysClose(fileSource) { handledFileSource =>
         val text = handledFileSource.getLines.mkString("\n")
@@ -81,7 +81,7 @@ package object fileHandling {
     }
   }
 
-  def chooseAndLoadFile: Option[(String, String)] = {
+  def chooseAndLoadTextFile: Option[(String, String)] = {
     val dialog = new FileDialog(null.asInstanceOf[FileDialog], "Load file", FileDialog.LOAD)
     dialog.setVisible(true)
     if (dialog.getFile == null) {
@@ -89,7 +89,7 @@ package object fileHandling {
     } else {
       val path = dialog.getDirectory + dialog.getFile
 
-      loadFile(Source.fromFile(path, "UTF-8")) match {
+      loadTextFile(Source.fromFile(path, "UTF-8")) match {
         case Right(fileContents) => Some(fileContents, path)
         case Left(errorMessage) => {
           Dialog.showMessage(null, errorMessage)
@@ -99,7 +99,7 @@ package object fileHandling {
     }
   }
 
-  def saveFile(text: String, path: String): Boolean = {
+  def saveTextFile(text: String, path: String): Boolean = {
     try {
       alwaysClose(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"))) { writer =>
         // we always add a newline to the end of the saved file
@@ -113,12 +113,12 @@ package object fileHandling {
     false
   }
 
-  def saveFileAs(text: String): Option[String] = {
+  def saveTextFileAs(text: String): Option[String] = {
     val dialog = new FileDialog(null.asInstanceOf[FileDialog], "Save file", FileDialog.SAVE)
     dialog.setVisible(true)
     if (dialog.getFile != null) {
       val path = dialog.getDirectory + dialog.getFile
-      if (saveFile(text, path))
+      if (saveTextFile(text, path))
         return Some(path)
     }
     None
