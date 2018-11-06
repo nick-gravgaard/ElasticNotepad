@@ -16,7 +16,7 @@ package object settings {
   case class Settings(elasticFont: FontCC,
                       nonElasticFont: FontCC,
                       emptyColumnWidth: Double,
-                      minGapBetweenText: Double,
+                      columnPadding: Double,
                       nonElasticTabSize: Int,
                       filesAreNonElastic: Boolean)
 
@@ -29,7 +29,7 @@ package object settings {
     private val elasticFontText = ("Elastic font", "Used when elastic tabstops is on (can be proportional)")
     private val nonElasticFontText = ("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")
     private val emptyColumnWidthText = ("Empty column width", "Measured in multiples of line height (ems)")
-    private val minGapBetweenTextText = ("Smallest gap between text", "Measured in multiples of line height (ems)")
+    private val columnPaddingText = ("Column padding", "Measured in multiples of line height (ems)")
     private val nonElasticTabSizeText = ("Non-elastic tab size", "The indent size in non-elastic files")
     private val filesAreNonElasticText = ("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")
 
@@ -38,7 +38,7 @@ package object settings {
         (defaults.elasticFont.toString, elasticFontText),
         (defaults.nonElasticFont.toString, nonElasticFontText),
         (defaults.emptyColumnWidth.toString, emptyColumnWidthText),
-        (defaults.minGapBetweenText.toString, minGapBetweenTextText),
+        (defaults.columnPadding.toString, columnPaddingText),
         (defaults.nonElasticTabSize.toString, nonElasticTabSizeText),
         (defaults.filesAreNonElastic.toString, filesAreNonElasticText)
       )
@@ -123,7 +123,7 @@ package object settings {
         getFont(m, elasticFontText._1),
         getFont(m, nonElasticFontText._1),
         m.get(emptyColumnWidthText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.emptyColumnWidth),
-        m.get(minGapBetweenTextText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.minGapBetweenText),
+        m.get(columnPaddingText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.columnPadding),
         m.get(nonElasticTabSizeText._1).flatMap(i => Try(i.toInt).toOption).getOrElse(defaults.nonElasticTabSize),
         m.get(filesAreNonElasticText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesAreNonElastic)
       )

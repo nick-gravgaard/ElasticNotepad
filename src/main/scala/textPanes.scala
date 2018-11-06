@@ -20,7 +20,7 @@ import settings.{FontCC, Settings}
 
 package object textPanes {
 
-  class ElasticTextPane(var elasticFont: Font, var emptyColumnWidth: Double, var minGapBetweenText: Double) extends TextPane {
+  class ElasticTextPane(var elasticFont: Font, var emptyColumnWidth: Double, var columnPadding: Double) extends TextPane {
 
     var fm = new Canvas().getFontMetrics(elasticFont)
     setFont(elasticFont)
@@ -30,21 +30,21 @@ package object textPanes {
       val fontMetrics = new Canvas().getFontMetrics(elasticFont)
       val em = fontMetrics.getHeight  // more accurate than the font's point size (with Merriweather at least)
       val emptyColumnWidthPx = (emptyColumnWidth * em).toInt
-      val minGapBetweenTextPx = (minGapBetweenText * em).toInt
-      val emptyColumnWidthMinusGapPx = emptyColumnWidthPx - minGapBetweenTextPx
-      (emptyColumnWidthMinusGapPx, minGapBetweenTextPx)
+      val columnPaddingPx = (columnPadding * em).toInt
+      val emptyColumnWidthMinusPaddingPx = emptyColumnWidthPx - columnPaddingPx
+      (emptyColumnWidthMinusPaddingPx, columnPaddingPx)
     }
 
-    var (emptyColumnWidthMinusGapPx, minGapBetweenTextPx) = getPxVersionsOfEmSettings
+    var (emptyColumnWidthMinusPaddingPx, columnPaddingPx) = getPxVersionsOfEmSettings
 
-    def changeSettings(newElasticFont: Font, newEmptyColumnWidth: Double, newMinGapBetweenText: Double): Unit = {
+    def changeSettings(newElasticFont: Font, newEmptyColumnWidth: Double, newColumnPadding: Double): Unit = {
       elasticFont = newElasticFont
       emptyColumnWidth = newEmptyColumnWidth
-      minGapBetweenText = newMinGapBetweenText
+      columnPadding = newColumnPadding
 
       val pxSettings = getPxVersionsOfEmSettings
-      emptyColumnWidthMinusGapPx = pxSettings._1
-      minGapBetweenTextPx = pxSettings._2
+      emptyColumnWidthMinusPaddingPx = pxSettings._1
+      columnPaddingPx = pxSettings._2
 
       fm = new Canvas().getFontMetrics(elasticFont)
       setFont(elasticFont)
@@ -150,7 +150,7 @@ package object textPanes {
       val elements = allElements.drop(recalcStart).take(recalcLength)
       val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
       val cellsPerLine = textPerLine.map(splitAndStrip(_, '\t').toList)
-      def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), emptyColumnWidthMinusGapPx) + minGapBetweenTextPx
+      def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), emptyColumnWidthMinusPaddingPx) + columnPaddingPx
       for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements)) {
         val tabStops = tabstopPositionsThisLine.map(new TabStop(_))
         val attributes = new SimpleAttributeSet()
@@ -253,10 +253,10 @@ package object textPanes {
 
   }
 
-  class EditorTextPane(_elasticFont: Font, _emptyColumnWidth: Double, _minGapBetweenText: Double,
+  class EditorTextPane(_elasticFont: Font, _emptyColumnWidth: Double, _columnPadding: Double,
                        var nonElasticFont: Font, var nonElasticTabSize: Int, var filesAreNonElastic: Boolean,
                        var currentPath: String)
-    extends ElasticTextPane(_elasticFont, _emptyColumnWidth, _minGapBetweenText) {
+    extends ElasticTextPane(_elasticFont, _emptyColumnWidth, _columnPadding) {
 
     setNewText(if (filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
 
@@ -280,17 +280,17 @@ package object textPanes {
       }
     }
 
-    def changeSettings(newElasticFont: Font, newEmptyColumnWidth: Double, newMinGapBetweenText: Double,
+    def changeSettings(newElasticFont: Font, newEmptyColumnWidth: Double, newColumnPadding: Double,
                        newNonElasticFont: Font, newNonElasticTabSize: Int): Unit = {
       elasticFont = newElasticFont
       emptyColumnWidth = newEmptyColumnWidth
-      minGapBetweenText = newMinGapBetweenText
+      columnPadding = newColumnPadding
       nonElasticFont = newNonElasticFont
       nonElasticTabSize = newNonElasticTabSize
 
       val pxSettings = getPxVersionsOfEmSettings
-      emptyColumnWidthMinusGapPx = pxSettings._1
-      minGapBetweenTextPx = pxSettings._2
+      emptyColumnWidthMinusPaddingPx = pxSettings._1
+      columnPaddingPx = pxSettings._2
       if (_elastic) {
         fm = new Canvas().getFontMetrics(elasticFont)
         setFont(elasticFont)

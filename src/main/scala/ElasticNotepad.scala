@@ -92,7 +92,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     val textPane = new EditorTextPane(
       new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-      currentSettings.emptyColumnWidth, currentSettings.minGapBetweenText,
+      currentSettings.emptyColumnWidth, currentSettings.columnPadding,
       new Font(currentSettings.nonElasticFont.name, Font.PLAIN, currentSettings.nonElasticFont.size),
       currentSettings.nonElasticTabSize, currentSettings.filesAreNonElastic, scratchFilePath.toString
     ) {
@@ -104,7 +104,7 @@ object ElasticNotepad extends SimpleSwingApplication {
     val toolbarPanel = new FlowPanel(Left)(elasticToggle, settingsToggle)
     val settingsTextPane = new ElasticTextPane(
       new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-      currentSettings.emptyColumnWidth, currentSettings.minGapBetweenText
+      currentSettings.emptyColumnWidth, currentSettings.columnPadding
     )
     settingsTextPane.setNewText(currentSettingsText)
 
@@ -148,13 +148,13 @@ object ElasticNotepad extends SimpleSwingApplication {
         currentSettings = Settings.saveAndParse(settingsTextPane.text)
         textPane.changeSettings(
           new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-          currentSettings.emptyColumnWidth, currentSettings.minGapBetweenText,
+          currentSettings.emptyColumnWidth, currentSettings.columnPadding,
           new Font(currentSettings.nonElasticFont.name, Font.PLAIN, currentSettings.nonElasticFont.size),
           currentSettings.nonElasticTabSize
         )
         settingsTextPane.changeSettings(
           new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-          currentSettings.emptyColumnWidth, currentSettings.minGapBetweenText
+          currentSettings.emptyColumnWidth, currentSettings.columnPadding
         )
       }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>
