@@ -15,7 +15,7 @@ package object elasticTabstops {
     case h::t => h match {
       case None => None :: maxConsecutive(list.drop(1))
       case Some(cell) => {
-        val segment = list.takeWhile(_.isDefined).map(_.get)
+        val segment = list.takeWhile(_.isDefined).flatten
         List.fill(segment.length)(Option(segment.max)) ::: maxConsecutive(list.drop(segment.length))
       }
     }
@@ -24,15 +24,10 @@ package object elasticTabstops {
   def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
     val maxNofCells = textWidthsPerLine.map(_.length).max
 
-    val maxedWidthsPerColumn = for (c <- 0 until maxNofCells)
-      yield maxConsecutive(for (textWidthsThisLine <- textWidthsPerLine)
-        yield textWidthsThisLine.indices.lastOption.flatMap(
-          (lastIndex: Int) => if (c < lastIndex) Option(textWidthsThisLine(c)) else None
-        )
-      )
+    val maxedWidthsPerColumn = (0 until maxNofCells).map(c =>
+      maxConsecutive(textWidthsPerLine.map(_.dropRight(1).lift(c))))
 
-    for (maxedWidthsThisLine <- maxedWidthsPerColumn.toList.transpose)
-      yield maxedWidthsThisLine.takeWhile(_.isDefined).map(_.get)
+    maxedWidthsPerColumn.toList.transpose.map(_.takeWhile(_.isDefined).flatten)
   }
 
   def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] =
@@ -41,20 +36,21 @@ package object elasticTabstops {
   def calcTabstopPositions(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] = {
     val cellWidthsPerLine = measureWidthsPerLine(cellsPerLine, measureText)
 
-    for (maxedWidthsThisLine <- calcMaxedWidthsPerLine(cellWidthsPerLine))
-      yield maxedWidthsThisLine.scanLeft(0)(_ + _).drop(1)
+    calcMaxedWidthsPerLine(cellWidthsPerLine).map(_.scanLeft(0)(_ + _).drop(1))
   }
 
   def tabsToSpaces(text: String, nofIndentSpaces: Int): String = {
-    val cellPaddingWidthSpaces = 2 // must be at least 2 so we can convert back to tabs
+    val cellPaddingWidthSpaces = 2  // must be at least 2 so we can convert back to tabs
     val cellMinimumWidthSpaces = nofIndentSpaces - cellPaddingWidthSpaces
     val cellsPerLine = split(text, '\n').map(splitAndStrip(_, '\t').toList).toList
     def calcCellWidth(text: String): Int = math.max(text.length, cellMinimumWidthSpaces) + cellPaddingWidthSpaces
     val maxedWidthsPerLine = calcMaxedWidthsPerLine(measureWidthsPerLine(cellsPerLine, calcCellWidth))
 
-    (for ((widthsThisLine, cellsThisLine) <- maxedWidthsPerLine.zip(cellsPerLine))
-      yield (for ((cellText, width) <- cellsThisLine.zip(widthsThisLine :+ 0))
-        yield cellText + (" " * (width - cellText.length))).mkString).mkString("\n")
+    maxedWidthsPerLine.zip(cellsPerLine).map { case (widthsThisLine, cellsThisLine) =>
+      cellsThisLine.zip(widthsThisLine :+ 0).map { case (cellText, width) =>
+        cellText + (" " * (width - cellText.length))
+      }.mkString
+    }.mkString("\n")
   }
 
   def replaceEmptyRuns(list: List[Option[String]]) : List[Option[String]] = list match {
@@ -88,9 +84,9 @@ package object elasticTabstops {
     val allPositions = SortedSet(matchesPerLine.map(_.keys).toList.flatten: _*)
 
     // for each line, create matched or empty strings at every possible cell position
-    val possCellsPerLine = for (matchesThisLine <- matchesPerLine)
-      yield for (position <- allPositions.toArray)
-        yield if (matchesThisLine.contains(position)) Some(matchesThisLine(position)) else Some("")
+    val possCellsPerLine = matchesPerLine.map(matchesThisLine =>
+      allPositions.toArray.map(position =>
+        if (matchesThisLine.contains(position)) Some(matchesThisLine(position)) else Some("")))
 
     // we know that empty strings at the end of the line cannot be cells, so replace them with None
     val possCellsPerLine2 = possCellsPerLine.map { possCellsThisLine =>
