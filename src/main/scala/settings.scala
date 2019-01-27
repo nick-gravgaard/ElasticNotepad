@@ -21,10 +21,28 @@ package object settings {
                       filesAreNonElastic: Boolean)
 
   object Settings {
-    def defaults = Settings(FontCC("Merriweather", 19), FontCC("Inconsolata", 23), 1.8, 0.625, 4, true)
+    private val preferredElasticFonts = List(
+      FontCC("Merriweather", 22),
+      FontCC("Palatino", 25),
+      FontCC("Palatino Linotype", 25),
+      FontCC("URW Palladio L", 25),
+      FontCC("Georgia", 24)
+    )
+    private val preferredNonElasticFonts = List(
+      FontCC("Inconsolata", 26),
+      FontCC("DejaVu Sans Mono", 23),
+      FontCC("Consolas", 23),
+      FontCC("Menlo", 23),
+      FontCC("Courier New", 24)
+    )
 
-    private val backupElasticFont = FontCC("Serif", 23)
-    private val backupNonElasticFont = FontCC("Monospaced", 23)
+    private val fallbackElasticFont = FontCC("Serif", 24)
+    private val fallbackNonElasticFont = FontCC("Monospaced", 24)
+
+    private val bestAvailableElasticFont = getBestAvailableFont(preferredElasticFonts, fallbackElasticFont)
+    private val bestAvailableNonElasticFont = getBestAvailableFont(preferredNonElasticFonts, fallbackNonElasticFont)
+
+    def defaults = Settings(bestAvailableElasticFont, bestAvailableNonElasticFont, 1.8, 0.625, 4, true)
 
     private val elasticFontText = ("Elastic font", "Used when elastic tabstops is on (can be proportional)")
     private val nonElasticFontText = ("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")
@@ -32,6 +50,11 @@ package object settings {
     private val columnPaddingText = ("Column padding", "Measured in multiples of line height (ems)")
     private val nonElasticTabSizeText = ("Non-elastic tab size", "The indent size in non-elastic files")
     private val filesAreNonElasticText = ("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")
+
+    def getBestAvailableFont(preferredFonts: List[FontCC], fallbackFont: FontCC): FontCC = {
+      val availableFontNames = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()
+      preferredFonts.find(pf => availableFontNames.contains(pf.name)).getOrElse(fallbackFont)
+    }
 
     def defaultSettingsText: String = {
       val cellsPerLine = List(
@@ -86,7 +109,7 @@ package object settings {
     }
 
     def getFont(m: Map[String, String], key: String): FontCC = {
-      val backupFont = if (key == nonElasticFontText._1) backupNonElasticFont else backupElasticFont
+      val backupFont = if (key == nonElasticFontText._1) fallbackNonElasticFont else fallbackElasticFont
       m.get(key) match {
         case Some(value) => {
           val parts = value.split(',')
