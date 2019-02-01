@@ -1,16 +1,17 @@
 import java.awt.{Canvas, Color, Dimension, Font, FontMetrics}
-import java.awt.Event.{CTRL_MASK, SHIFT_MASK}
+import java.awt.Event.SHIFT_MASK
 import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S}
+import java.awt.Toolkit
+
 import javax.swing.{KeyStroke, UIManager, WindowConstants}
 import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
+
 import scala.swing.BorderPanel.Position.{Center, North}
 import scala.swing.Dialog.Result
 import scala.swing.event.ButtonClicked
 import scala.swing.FlowPanel.Alignment.Left
 import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, Orientation, ScrollPane, Separator, SimpleSwingApplication, ToggleButton}
-
 import com.bulenkov.darcula.DarculaLaf
-
 import elasticTabstops.{spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
@@ -18,6 +19,11 @@ import textPanes.{EditorTextPane, ElasticTextPane}
 
 
 object ElasticNotepad extends SimpleSwingApplication {
+
+  if (System.getProperty("os.name") == "Mac OS X") {
+    System.setProperty("apple.laf.useScreenMenuBar", "true")
+  }
+  val shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()
 
   var (currentSettings, currentSettingsText) = Settings.load
 
@@ -52,7 +58,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       val action = Action("Open scratch file") {
         textPane.openScratchFile(scratchFilePath, currentSettings)
       }
-      action.accelerator = Some(KeyStroke.getKeyStroke(VK_N, CTRL_MASK))
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_N, shortcutKeyMask))
       action
     }
 
@@ -60,7 +66,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       val action = Action("Open...") {
         textPane.openFile(currentSettings)
       }
-      action.accelerator = Some(KeyStroke.getKeyStroke(VK_O, CTRL_MASK))
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_O, shortcutKeyMask))
       action
     }
 
@@ -68,7 +74,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       val action = Action("Save") {
         textPane.saveFile(currentSettings)
       }
-      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, CTRL_MASK))
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, shortcutKeyMask))
       action
     }
 
@@ -76,7 +82,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       val action = Action("Save as...") {
         textPane.saveFileAs(currentSettings)
       }
-      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, CTRL_MASK | SHIFT_MASK))
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, shortcutKeyMask | SHIFT_MASK))
       action
     }
 
@@ -124,6 +130,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       contents += settingsPanel
     }
     val scrollPane = new ScrollPane(textPane)
+    scrollPane.verticalScrollBar.unitIncrement = 8
 
     contents = new BorderPanel {
       layout(toolbarAndSettingsPanel) = North
