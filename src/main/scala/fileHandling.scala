@@ -9,7 +9,7 @@ import scala.util.control.NonFatal
 
 package object fileHandling {
 
-  val appDirPath: Path = Paths.get(s"${System.getProperty("user.home")}/.elasticnotepad")
+  val appDirPath: Path = Paths.get(s"${System.getProperty("user.home")}/.elastic-notepad")
   val scratchFilePath: Path = Paths.get(s"$appDirPath/scratch")
   val settingsFilePath: Path = Paths.get(s"$appDirPath/settings")
 
