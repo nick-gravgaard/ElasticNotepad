@@ -197,19 +197,16 @@ package object textPanes {
 
     val undoManager = new UndoManager
     val doc = peer.getDocument
-    val javaVersionNum = System.getProperty("java.version").split('.').head.toInt
     doc.addUndoableEditListener((event: UndoableEditEvent) => {
-      // There are problems with undo in Java 9 and later, so disable until we can get a workaround working :(
+      val edit = event.getEdit
+
+      // The following line no longer works in Java 9 and later
       // see: https://bugs.openjdk.java.net/browse/JDK-8190763
-      // possible workarounds:
-      // * https://github.com/nordfalk/jsyntaxpane/issues/198
-      // * https://issues.apache.org/jira/browse/NETBEANS-217
-      if (javaVersionNum < 9) {
-        val edit = event.getEdit
-        val eventType = edit.asInstanceOf[DocumentEvent].getType
-        if (eventType != DocumentEvent.EventType.CHANGE)
-          // don't allow undoing of style changes (so we ignore tabstop changes)
-          undoManager.addEdit(edit)
+      //if (edit.isInstanceOf[DocumentEvent] && edit.asInstanceOf[DocumentEvent].getType != DocumentEvent.EventType.CHANGE)
+
+      if (edit.getUndoPresentationName != "Undo style change") {
+        // don't allow undoing of style changes (so we ignore tabstop changes)
+        undoManager.addEdit(edit)
       }
     })
 
