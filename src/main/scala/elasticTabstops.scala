@@ -7,19 +7,32 @@ package object elasticTabstops {
   def split(string: String, char: Char) = string.split(char.toString, -1)  // -1 so we get trailing empty strings
   def splitAndStrip(string: String, char: Char) = string.split(char)
 
-  def maxConsecutive(list: List[Option[Int]]) : List[Option[Int]] = list match {
-    // Segments are runs of Some. Replace each item in a segment with the highest value in that segment.
-    // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
-    // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
-    case Nil => Nil
-    case h::t => h match {
-      case None => None :: maxConsecutive(list.drop(1))
-      case Some(cell) => {
-        val segment = list.takeWhile(_.isDefined).flatten
-        List.fill(segment.length)(Option(segment.max)) ::: maxConsecutive(list.drop(segment.length))
+  // Group runs of adjacent Somes and Nones.
+  // scala>            groupAdjacent(List(     Some(1), Some(2),       None,       Some(4),       None, None,       Some(7), Some(8), Some(9)))
+  // res1: List[List[Option[Int]]] = List(List(Some(1), Some(2)), List(None), List(Some(4)), List(None, None), List(Some(7), Some(8), Some(9)))
+  @annotation.tailrec
+  def groupAdjacent[A](remaining: List[Option[A]], processed: List[List[Option[A]]] = Nil): List[List[Option[A]]] =
+    remaining.headOption match {
+      case None => processed
+      case Some(firstRemaining) => {
+        val segment = firstRemaining match {
+          case None => remaining.takeWhile(_.isEmpty)
+          case Some(_) => remaining.takeWhile(_.isDefined)
+        }
+        groupAdjacent(remaining.drop(segment.length), processed ::: List(segment))
       }
     }
-  }
+
+  // Segments are runs of Some. Replace each item in a segment with the highest value in that segment.
+  // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
+  // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
+  def maxConsecutive(list: List[Option[Int]]): List[Option[Int]] =
+    groupAdjacent(list).flatMap { segment =>
+      segment.headOption.getOrElse(None) match {
+        case None => segment
+        case Some(_) => List.fill(segment.length)(Some(segment.flatten.max))
+      }
+    }
 
   def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
     val maxNofCells = textWidthsPerLine.map(_.length).max
@@ -53,23 +66,20 @@ package object elasticTabstops {
     }.mkString("\n")
   }
 
-  def replaceEmptyRuns(list: List[Option[String]]) : List[Option[String]] = list match {
-    // Segments are runs of Some. Replace each item in a segment with None if none of them contain any text.
-    // scala>              replaceEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
-    // res1: List[Option[Option[String]]] = List(Some(""), Some("a"), None, None, None))
-    case Nil => Nil
-    case h::t => h match {
-      case None => None :: replaceEmptyRuns(list.drop(1))
-      case Some(possibleCell) => {
-        val segment = list.takeWhile(_.isDefined)
-        val segmentOrNones = if (segment.forall(_.contains("")))
-          List.fill[Option[String]](segment.length)(None)
-        else
-          segment
-        segmentOrNones ::: replaceEmptyRuns(list.drop(segment.length))
+  // Segments are runs of Some. Replace each item in a segment with None if none of them contain any text.
+  // scala>      replaceEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
+  // res1: List[Option[String]] = List(Some(""), Some("a"), None, None,     None))
+  def replaceEmptyRuns(list: List[Option[String]]): List[Option[String]] =
+    groupAdjacent(list).flatMap { segment =>
+      segment.headOption.getOrElse(None) match {
+        case None => segment
+        case Some(_) =>
+          if (segment.forall(_.contains("")))
+            List.fill[Option[String]](segment.length)(None)
+          else
+            segment
       }
     }
-  }
 
   def spacesToTabs(text: String): String = {
     // a non-space followed by any number of chars that are either a non-space or a space followed by a non-space
