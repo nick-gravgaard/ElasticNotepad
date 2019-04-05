@@ -1,7 +1,5 @@
 name := "Elastic Notepad"
 
-version := "1.3.4"
-
 scalaVersion := "2.12.7"
 
 assemblyJarName in assembly := "ElasticNotepad.jar"
