@@ -7,38 +7,37 @@ package object elasticTabstops {
   def split(string: String, char: Char) = string.split(char.toString, -1)  // -1 so we get trailing empty strings
   def splitAndStrip(string: String, char: Char) = string.split(char)
 
-  // Group runs of adjacent Somes and Nones.
-  // scala>            groupAdjacent(List(     Some(1), Some(2),       None,       Some(4),       None, None,       Some(7), Some(8), Some(9)))
-  // res1: List[List[Option[Int]]] = List(List(Some(1), Some(2)), List(None), List(Some(4)), List(None, None), List(Some(7), Some(8), Some(9)))
+  // Process runs of Some in list.
+  // scala>    processAdjacent((l: List[Option[Int]]) => List.fill(l.length)(Some(l.flatten.max)),
+  //                           List(Some(1), Some(2), None, Some(4), Some(5)))
+  // res0: List[Option[Int]] = List(Some(2), Some(2), None, Some(5), Some(5))
   @annotation.tailrec
-  def groupAdjacent[A](remaining: List[Option[A]], processed: List[List[Option[A]]] = Nil): List[List[Option[A]]] =
-    remaining.headOption match {
+  def processAdjacent[A](process: List[Option[A]] => List[Option[A]],
+                         unprocessed: List[Option[A]], processed: List[Option[A]] = Nil): List[Option[A]] =
+    unprocessed.headOption match {
       case None => processed
-      case Some(firstRemaining) => {
-        val segment = firstRemaining match {
-          case None => remaining.takeWhile(_.isEmpty)
-          case Some(_) => remaining.takeWhile(_.isDefined)
+      case Some(firstOfRun) => {
+        val run = firstOfRun match {
+          case None => unprocessed.takeWhile(_.isEmpty)
+          case Some(_) => process(unprocessed.takeWhile(_.isDefined))
         }
-        groupAdjacent(remaining.drop(segment.length), processed ::: List(segment))
+        processAdjacent(process, unprocessed.drop(run.length), processed ::: run)
       }
     }
 
-  // Segments are runs of Some. Replace each item in a segment with the highest value in that segment.
-  // scala>     maxConsecutive(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
-  // res1: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
-  def maxConsecutive(list: List[Option[Int]]): List[Option[Int]] =
-    groupAdjacent(list).flatMap { segment =>
-      segment.headOption.getOrElse(None) match {
-        case None => segment
-        case Some(_) => List.fill(segment.length)(Some(segment.flatten.max))
-      }
-    }
+  // Replace each item in a run with its highest value.
+  // scala>        maxAdjacent(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
+  // res0: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
+  def maxAdjacent(list: List[Option[Int]]): List[Option[Int]] = {
+    def fillMax = (l: List[Option[Int]]) => List.fill(l.length)(Some(l.flatten.max))
+    processAdjacent(fillMax, list)
+  }
 
   def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
     val maxNofCells = textWidthsPerLine.map(_.length).max
 
     val maxedWidthsPerColumn = (0 until maxNofCells).map(c =>
-      maxConsecutive(textWidthsPerLine.map(_.dropRight(1).lift(c))))
+      maxAdjacent(textWidthsPerLine.map(_.dropRight(1).lift(c))))
 
     maxedWidthsPerColumn.toList.transpose.map(_.takeWhile(_.isDefined).flatten)
   }
@@ -66,20 +65,14 @@ package object elasticTabstops {
     }.mkString("\n")
   }
 
-  // Segments are runs of Some. Replace each item in a segment with None if none of them contain any text.
+  // Replace each item in a run with None if all of its contents are empty strings.
   // scala>      replaceEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
-  // res1: List[Option[String]] = List(Some(""), Some("a"), None, None,     None))
-  def replaceEmptyRuns(list: List[Option[String]]): List[Option[String]] =
-    groupAdjacent(list).flatMap { segment =>
-      segment.headOption.getOrElse(None) match {
-        case None => segment
-        case Some(_) =>
-          if (segment.forall(_.contains("")))
-            List.fill[Option[String]](segment.length)(None)
-          else
-            segment
-      }
-    }
+  // res0: List[Option[String]] = List(Some(""), Some("a"), None, None,     None))
+  def replaceEmptyRuns(list: List[Option[String]]): List[Option[String]] = {
+    def nonesIfAllEmpty = (l: List[Option[String]]) =>
+      if (l.forall(_.contains(""))) List.fill[Option[String]](l.length)(None) else l
+    processAdjacent(nonesIfAllEmpty, list)
+  }
 
   def spacesToTabs(text: String): String = {
     // a non-space followed by any number of chars that are either a non-space or a space followed by a non-space
