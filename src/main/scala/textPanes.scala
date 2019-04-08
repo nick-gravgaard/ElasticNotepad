@@ -143,18 +143,16 @@ package object textPanes {
       val doc = peer.getDocument.asInstanceOf[StyledDocument]
       val section = doc.getDefaultRootElement
 
-      val allElements = (for (l <- 0 until section.getElementCount) yield section.getElement(l)).toList
-      val allTextPerLine = for (el <- allElements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
+      val allElements = (0 until section.getElementCount).map(l => section.getElement(l)).toList
+      val allTextPerLine = allElements.map(el => doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset))
 
       val (recalcStart, recalcLength) = startAndLength match {
         case None => (0, allTextPerLine.length)
-        case Some((lineNum, nofLines)) => {
-          getRecalcRange(allTextPerLine, lineNum, nofLines)
-        }
+        case Some((lineNum, nofLines)) => getRecalcRange(allTextPerLine, lineNum, nofLines)
       }
 
       val elements = allElements.drop(recalcStart).take(recalcLength)
-      val textPerLine = for (el <- elements) yield doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset)
+      val textPerLine = elements.map(el => doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset))
       val cellsPerLine = textPerLine.map(splitAndStrip(_, '\t').toList)
       def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), emptyColumnWidthMinusPaddingPx) + columnPaddingPx
       for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements)) {
