@@ -75,16 +75,22 @@ package object textPanes {
       (lineNum, minimalWhitespacePos)
     }
 
-    def minimiseMultipleWhitespace(list: List[(Char, Int)]) : List[(Char, Int)] = list match {
-      case Nil => Nil
-      case h::t => h match {
-        case (' ', _) | ('\t', _) => {
-          val segment = list.takeWhile((cAndP: (Char, Int)) => cAndP._1 == ' ' || cAndP._1 == '\t')
-          (' ', segment.head._2) :: minimiseMultipleWhitespace(list.drop(segment.length))
+    @annotation.tailrec
+    final def minimiseMultipleWhitespace(unprocessed: List[(Char, Int)],
+                                         processed: List[(Char, Int)] = Nil): List[(Char, Int)] =
+      unprocessed.headOption match {
+        case None => processed
+        case Some(charAndPos) => {
+          val (newCharAndPos, dropLength) = charAndPos match {
+            case (char, pos) if char == ' ' || char == '\t' => {
+              val run = unprocessed.takeWhile { case (c, _) => c == ' ' || c == '\t' }
+              ((' ', pos), run.length)
+            }
+            case nonWhitespaceCharAndPos => (nonWhitespaceCharAndPos, 1)
+          }
+          minimiseMultipleWhitespace(unprocessed.drop(dropLength), processed :+ newCharAndPos)
         }
-        case nonWhitespaceCAndP => nonWhitespaceCAndP :: minimiseMultipleWhitespace(list.drop(1))
       }
-    }
 
     def setCaretsLineNumAndPos(lineNumAndPos: (Int, Int)): Unit = {
       val (lineNum, minimalWhitespacePos) = lineNumAndPos
