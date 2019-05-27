@@ -93,18 +93,16 @@ package object elasticTabstops {
     // get maps for each line containing the position of text and the text itself
     val matchesPerLine = prefixedTextPerLine.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
 
-    // make a sorted set of possible cell positions using the flattened list of positions as varargs
-    val allPositions = SortedSet(matchesPerLine.map(_.keys).toList.flatten: _*)
+    // get sorted and unique possible cell positions using the flattened positions as varargs
+    val allPositions = SortedSet(matchesPerLine.map(_.keys).flatten: _*).toArray
 
-    // for each line, create matched or empty strings at every possible cell position
-    val matchesAndEmptiesPerLine = matchesPerLine.map(matchesThisLine =>
-      allPositions.toArray.map(position =>
-        if (matchesThisLine.contains(position)) Some(matchesThisLine(position)) else Some("")))
-
-    // we know that empty strings at the end of the line cannot be cells, so replace them with None
-    matchesAndEmptiesPerLine.map { possCellsThisLine =>
-      val nofTrailingEmpties = possCellsThisLine.reverse.takeWhile(_.contains("")).length
-      possCellsThisLine.take(possCellsThisLine.length - nofTrailingEmpties) ++ List.fill(nofTrailingEmpties)(None)
+    // create Options at every possible cell position
+    matchesPerLine.map { matchesThisLine =>
+      val lastPosThisLine = matchesThisLine.keySet.max
+      allPositions.map { pos =>
+        if (matchesThisLine.contains(pos)) Some(matchesThisLine(pos))
+        else if (pos <= lastPosThisLine) Some("") else None
+      }
     }
   }
 
