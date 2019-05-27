@@ -12,8 +12,8 @@ package object elasticTabstops {
   //                           List(Some(1), Some(2), None, Some(4), Some(5)))
   // res0: List[Option[Int]] = List(Some(2), Some(2), None, Some(5), Some(5))
   @annotation.tailrec
-  def processAdjacent[A](process: List[Option[A]] => List[Option[A]],
-                         unprocessed: List[Option[A]], processed: List[Option[A]] = Nil): List[Option[A]] =
+  private def processAdjacent[A](process: List[Option[A]] => List[Option[A]],
+                                 unprocessed: List[Option[A]], processed: List[Option[A]] = Nil): List[Option[A]] =
     unprocessed.headOption match {
       case None => processed
       case Some(firstOfRun) => {
@@ -28,12 +28,12 @@ package object elasticTabstops {
   // Replace each item in a run with its highest value.
   // scala>        maxAdjacent(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
   // res0: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
-  def maxAdjacent(list: List[Option[Int]]): List[Option[Int]] = {
+  private def maxAdjacent(list: List[Option[Int]]): List[Option[Int]] = {
     def fillMax = (l: List[Option[Int]]) => List.fill(l.length)(Some(l.flatten.max))
     processAdjacent(fillMax, list)
   }
 
-  def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
+  private def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
     val maxNofCells = textWidthsPerLine.map(_.length).max
 
     val maxedWidthsPerColumn = (0 until maxNofCells).map(c =>
@@ -42,7 +42,7 @@ package object elasticTabstops {
     maxedWidthsPerColumn.toList.transpose.map(_.takeWhile(_.isDefined).flatten)
   }
 
-  def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] =
+  private def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] =
     cellsPerLine.map(_.map(measureText(_)))
 
   def calcTabstopPositions(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] = {
@@ -68,7 +68,7 @@ package object elasticTabstops {
   // Replace each item in a run with None if all of its contents are empty strings.
   // scala>      replaceEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
   // res0: List[Option[String]] = List(Some(""), Some("a"), None, None,     None))
-  def replaceEmptyRuns(list: List[Option[String]]): List[Option[String]] = {
+  private def replaceEmptyRuns(list: List[Option[String]]): List[Option[String]] = {
     def nonesIfAllEmpty = (l: List[Option[String]]) =>
       if (l.forall(_.contains(""))) List.fill[Option[String]](l.length)(None) else l
     processAdjacent(nonesIfAllEmpty, list)
