@@ -74,15 +74,6 @@ package object elasticTabstops {
     processAdjacent(nonesIfAllEmpty, column.toList).toArray
   }
 
-  private def transpose(a: Array[Array[Option[String]]]): Array[Array[Option[String]]] = {
-    val nofRows = a.length
-    // we know that all rows have the same number of columns
-    val nofCols = a.headOption.map(_.length).getOrElse(0)
-    val b = Array.ofDim[Option[String]](nofCols, nofRows)
-    for (y <- 0 until nofRows; x <- 0 until nofCols) b(x)(y) = a(y)(x)
-    b
-  }
-
   private def getPossCellsFromText(text: String): Array[Array[Option[String]]] = {
     // a non-space followed by any number of chars that are either a non-space or a space followed by a non-space
     val cellTextRegEx = "[^ ](?:[^ ]| (?=[^ ]))*".r
@@ -97,9 +88,9 @@ package object elasticTabstops {
     val allPositions = SortedSet(matchesPerLine.map(_.keys).flatten: _*).toArray
 
     // create Options at every possible cell position
-    matchesPerLine.map { matchesThisLine =>
-      val lastPosThisLine = matchesThisLine.keySet.max
-      allPositions.map { pos =>
+    allPositions.map { pos =>
+      matchesPerLine.map { matchesThisLine =>
+        val lastPosThisLine = matchesThisLine.keySet.max
         if (matchesThisLine.contains(pos)) Some(matchesThisLine(pos))
         else if (pos <= lastPosThisLine) Some("") else None
       }
@@ -107,12 +98,9 @@ package object elasticTabstops {
   }
 
   def spacesToTabs(text: String): String = {
-    val possCellsPerLine = getPossCellsFromText(text)
+    val possCellsPerCol = getPossCellsFromText(text)
 
-    // transpose so we can iterate over columns
-    val possCellsPerCol = transpose(possCellsPerLine)
-
-    // replace empty columns with Nones, transpose back, remove Nones, and join with tabs
+    // replace empty columns with Nones, transpose, remove Nones, and join with tabs
     val textPerLine = possCellsPerCol.toList.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t"))
 
     // finally, drop previously inserted non-whitespace character from each line and join with newlines
