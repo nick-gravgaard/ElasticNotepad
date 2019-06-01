@@ -74,18 +74,15 @@ package object elasticTabstops {
     processAdjacent(nonesIfAllEmpty, column.toList).toArray
   }
 
-  private def getPossCellsFromText(text: String): Array[Array[Option[String]]] = {
+  private def getPossCellsFromText(lines: Array[String]): Array[Array[Option[String]]] = {
     // a non-space followed by any number of chars that are either a non-space or a space followed by a non-space
     val cellTextRegEx = "[^ ](?:[^ ]| (?=[^ ]))*".r
 
-    // prefix each line with a non-whitespace character (as we want to treat the start of each line as a column of text)
-    val prefixedTextPerLine = split(text, '\n').map("|" + _)
-
     // get maps for each line containing the position of text and the text itself
-    val matchesPerLine = prefixedTextPerLine.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
+    val matchesPerLine = lines.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
 
     val positionsPerLine = matchesPerLine.map(_.keys)
-    val lastPosPerLine = positionsPerLine.map(_.max)
+    val lastPosPerLine = positionsPerLine.map(l => if (l.isEmpty) -1 else l.max)  // TODO: use maxOption in Scala 2.13
 
     // get sorted and unique possible cell positions using the flattened positions as varargs
     val allPositions = SortedSet(positionsPerLine.flatten: _*).toArray
@@ -100,12 +97,15 @@ package object elasticTabstops {
   }
 
   def spacesToTabs(text: String): String = {
-    val possCellsPerCol = getPossCellsFromText(text)
+    // split text into lines prepended with a non-whitespace character (so the first cell of each line is not empty)
+    val lines = split(text, '\n').map("|" + _)
+
+    val possCellsPerCol = getPossCellsFromText(lines)
 
     // replace empty columns with Nones, transpose, remove Nones, and join with tabs
     val textPerLine = possCellsPerCol.toList.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t"))
 
-    // finally, drop previously inserted non-whitespace character from each line and join with newlines
+    // finally, drop previously prepended non-whitespace character from each line and join with newlines
     textPerLine.map(_.drop(1)).mkString("\n")
   }
 }
