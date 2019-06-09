@@ -1,3 +1,4 @@
+import scala.annotation.tailrec
 import scala.collection.SortedSet
 
 
@@ -11,14 +12,14 @@ package object elasticTabstops {
   // scala>    processAdjacent((l: List[Option[Int]]) => List.fill(l.length)(Some(l.flatten.max)),
   //                           List(Some(1), Some(2), None, Some(4), Some(5)))
   // res0: List[Option[Int]] = List(Some(2), Some(2), None, Some(5), Some(5))
-  @annotation.tailrec
+  @tailrec
   private def processAdjacent[A](process: List[Option[A]] => List[Option[A]],
                                  unprocessed: List[Option[A]], processed: List[Option[A]] = Nil): List[Option[A]] =
-    unprocessed.headOption match {
-      case None => processed
-      case Some(firstOfRun) => {
-        val run = firstOfRun match {
-          case None => unprocessed.takeWhile(_.isEmpty)
+    unprocessed match {
+      case Nil => processed
+      case head :: _ => {
+        val run = head match {
+          case None    =>         unprocessed.takeWhile(_.isEmpty)
           case Some(_) => process(unprocessed.takeWhile(_.isDefined))
         }
         processAdjacent(process, unprocessed.drop(run.length), processed ::: run)
