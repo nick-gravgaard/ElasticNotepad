@@ -18,11 +18,9 @@ package object elasticTabstops {
     unprocessed match {
       case Nil => processed
       case head :: _ => {
-        val run = head match {
-          case None    =>         unprocessed.takeWhile(_.isEmpty)
-          case Some(_) => process(unprocessed.takeWhile(_.isDefined))
-        }
-        processAdjacent(process, unprocessed.drop(run.length), processed ::: run)
+        val (run, stillUnprocessed) = unprocessed.span(_.isDefined == head.isDefined)
+        val newProcessed = if (head.isDefined) process(run) else run
+        processAdjacent(process, stillUnprocessed, processed ::: newProcessed)
       }
     }
 
@@ -34,13 +32,12 @@ package object elasticTabstops {
     processAdjacent(fillMax, column)
   }
 
-  private def calcMaxedWidthsPerLine(textWidthsPerLine: List[List[Int]]) : List[List[Int]] = {
-    val maxNofCells = textWidthsPerLine.map(_.length).max
+  private def calcMaxedWidthsPerLine(widthsPerLine: List[List[Int]]) : List[List[Int]] = {
+    val maxNofCells = widthsPerLine.map(_.length).max
 
-    val maxedWidthsPerColumn = (0 until maxNofCells).map(c =>
-      maxAdjacent(textWidthsPerLine.map(_.dropRight(1).lift(c))))
+    val widthsPerCol = (0 until maxNofCells).map(idx => widthsPerLine.map(_.dropRight(1).lift(idx)))
 
-    maxedWidthsPerColumn.toList.transpose.map(_.takeWhile(_.isDefined).flatten)
+    widthsPerCol.map(maxAdjacent).toList.transpose.map(_.takeWhile(_.isDefined).flatten)
   }
 
   private def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] =
