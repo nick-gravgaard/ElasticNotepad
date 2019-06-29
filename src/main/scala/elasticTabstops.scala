@@ -13,14 +13,14 @@ package object elasticTabstops {
   //                           List(Some(1), Some(2), None, Some(4), Some(5)))
   // res0: List[Option[Int]] = List(Some(2), Some(2), None, Some(5), Some(5))
   @tailrec
-  private def processAdjacent[A](process: List[Option[A]] => List[Option[A]],
-                                 unprocessed: List[Option[A]], processed: List[Option[A]] = Nil): List[Option[A]] =
+  private def processAdjacent[A](unprocessed: List[Option[A]], processed: List[Option[A]] = Nil)
+                                (process: List[Option[A]] => List[Option[A]]): List[Option[A]] =
     unprocessed match {
       case Nil => processed
       case head :: _ => {
         val (run, stillUnprocessed) = unprocessed.span(_.isDefined == head.isDefined)
         val newProcessed = if (head.isDefined) process(run) else run
-        processAdjacent(process, stillUnprocessed, processed ::: newProcessed)
+        processAdjacent(stillUnprocessed, processed ::: newProcessed)(process)
       }
     }
 
@@ -28,8 +28,9 @@ package object elasticTabstops {
   // scala>        maxAdjacent(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))
   // res0: List[Option[Int]] = List(Some(2), Some(2), None, Some(4), None, None, Some(9), Some(9), Some(9))
   private def maxAdjacent(column: List[Option[Int]]): List[Option[Int]] = {
-    def fillMax = (l: List[Option[Int]]) => List.fill(l.length)(Some(l.flatten.max))
-    processAdjacent(fillMax, column)
+    processAdjacent(column) { l =>
+      List.fill(l.length)(Some(l.flatten.max))
+    }
   }
 
   private def calcMaxedWidthsPerLine(widthsPerLine: List[List[Int]]) : List[List[Int]] = {
@@ -64,12 +65,12 @@ package object elasticTabstops {
   }
 
   // Replace each item in a run with None if all of its contents are empty strings.
-  // scala>      replaceEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
+  // scala>      nullifyEmptyRuns(List(Some(""), Some("a"), None, Some(""), Some("")))
   // res0: List[Option[String]] = List(Some(""), Some("a"), None, None,     None))
-  private def replaceEmptyRuns(column: Array[Option[String]]): Array[Option[String]] = {
-    def nonesIfAllEmpty = (l: List[Option[String]]) =>
+  private def nullifyEmptyRuns(column: Array[Option[String]]): Array[Option[String]] = {
+    processAdjacent(column.toList) { l =>
       if (l.forall(_.contains(""))) List.fill[Option[String]](l.length)(None) else l
-    processAdjacent(nonesIfAllEmpty, column.toList).toArray
+    }.toArray
   }
 
   private def getPossCellsFromText(lines: Array[String]): Array[Array[Option[String]]] = {
@@ -101,7 +102,7 @@ package object elasticTabstops {
     val possCellsPerCol = getPossCellsFromText(lines)
 
     // replace empty columns with Nones, transpose, remove Nones, and join with tabs
-    val textPerLine = possCellsPerCol.toList.map(replaceEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t"))
+    val textPerLine = possCellsPerCol.toList.map(nullifyEmptyRuns).transpose.map(_.flatten).map(_.mkString("\t"))
 
     // finally, drop previously prepended non-whitespace character from each line and join with newlines
     textPerLine.map(_.drop(1)).mkString("\n")
