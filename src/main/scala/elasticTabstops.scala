@@ -81,7 +81,7 @@ package object elasticTabstops {
     val matchesPerLine = lines.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
 
     val positionsPerLine = matchesPerLine.map(_.keys)
-    val lastPosPerLine = positionsPerLine.map(l => if (l.isEmpty) -1 else l.max)  // TODO: use maxOption in Scala 2.13
+    val lastPosPerLine = positionsPerLine.map(l => l.toList.maxOption.getOrElse(-1))
 
     // get sorted and unique possible cell positions using the flattened positions as varargs
     val allPositions = SortedSet(positionsPerLine.flatten: _*).toArray
