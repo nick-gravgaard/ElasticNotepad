@@ -7,7 +7,7 @@ editor implements that invention, and should serve as a reference for anyone who
 wants to implement it in other editors.
 
 The reference implementation of the core elastic tabstops algorithm can be
-found in [elasticTabstops.scala](src/main/scala/elasticTabstops.scala).
+found in [elasticTabstops.scala](app/src/elasticTabstops.scala).
 
 ## Prerequisites
 
