@@ -11,7 +11,7 @@ import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
 import scala.swing.{Action, Dialog, TextPane}
 import scala.swing.event.{Key, KeyPressed}
 
-import buildInfo.BuildInfo.{name => appName, version => appVersion}
+import BuildInfo.{appName, appVersion}
 
 import elasticTabstops.{split, splitAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs}

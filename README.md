@@ -30,17 +30,17 @@ switch to a monospaced font and text doesn't *appear* lined up as a result.)
 
 To run the jar file, use this:
 
-	java -jar ElasticNotepad.jar
+	java -jar elastic-notepad.jar
 
 ## Changing it
 
 When developing, it can be run with:
 
-	sbt run
+	mill app.run
 
 You can build a new jar file with:
 
-	sbt clean assembly
+	mill clean && mill app.assembly
 
 ## Ugly font rendering?
 

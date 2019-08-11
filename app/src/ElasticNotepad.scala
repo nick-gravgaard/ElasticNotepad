@@ -17,7 +17,6 @@ import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveT
 import settings.{FontCC, Settings}
 import textPanes.{EditorTextPane, ElasticTextPane}
 
-
 object ElasticNotepad extends SimpleSwingApplication {
 
   if (System.getProperty("os.name") == "Mac OS X") {

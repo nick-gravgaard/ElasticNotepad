@@ -1,6 +1,9 @@
 *.class
 *.log
 
+# mill
+out/*
+
 # sbt specific
 .cache
 .history
