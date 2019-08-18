@@ -38,6 +38,10 @@ When developing, it can be run with:
 
 	mill app.run
 
+If you are using IntelliJ IDEA, its project config files can be generated (and regenerated should the build definition change) with:
+
+	mill mill.scalalib.GenIdea/idea
+
 You can build a new jar file with:
 
 	mill clean && mill app.assembly
