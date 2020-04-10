@@ -34,7 +34,7 @@ object app extends ScalaModule with BuildInfo {
 
   object test extends Tests {
     def ivyDeps = Agg(
-      ivy"org.scalatest::scalatest:3.0.8",
+      ivy"org.scalatest::scalatest:3.1.1",
     )
     def testFrameworks = Seq("org.scalatest.tools.Framework")
   }
