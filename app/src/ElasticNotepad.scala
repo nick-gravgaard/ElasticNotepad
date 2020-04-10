@@ -22,7 +22,7 @@ object ElasticNotepad extends SimpleSwingApplication {
   if (System.getProperty("os.name") == "Mac OS X") {
     System.setProperty("apple.laf.useScreenMenuBar", "true")
   }
-  val shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()
+  val shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx
 
   var (currentSettings, currentSettingsText) = Settings.load
 
