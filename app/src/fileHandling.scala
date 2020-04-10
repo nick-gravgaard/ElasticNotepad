@@ -27,7 +27,7 @@ package object fileHandling {
     }
   }
 
-  def createAppDir = {
+  def createAppDir() = {
     if (!Files.exists(appDirPath)) {
       Try(Files.createDirectory(appDirPath)) recoverWith {
         case exception => {
@@ -38,7 +38,7 @@ package object fileHandling {
     }
   }
 
-  def loadScratchFile: String = {
+  def loadScratchFile(): String = {
     createAppDir
 
     Files.exists(scratchFilePath) match {
@@ -49,11 +49,11 @@ package object fileHandling {
             Failure(exception)
           }
         }
-        saveTextFile(assets.InitialText, scratchFilePath.toString)
+        saveTextFile(assets.InitialText, scratchFilePath)
         assets.InitialText
       }
       case true => {
-        loadTextFile(Source.fromFile(scratchFilePath.toString, "UTF-8")) match {
+        loadTextFile(scratchFilePath) match {
           case Right(fileContents) => {
             fileContents
           }
@@ -67,7 +67,8 @@ package object fileHandling {
   }
 
 
-  def loadTextFile(fileSource: Source): Either[String, String] = {
+  def loadTextFile(path: Path): Either[String, String] = {
+    val fileSource = Source.fromFile(path.toString, "UTF-8")
     try {
       alwaysClose(fileSource) { handledFileSource =>
         val text = handledFileSource.getLines.mkString("\n")
@@ -81,15 +82,15 @@ package object fileHandling {
     }
   }
 
-  def chooseAndLoadTextFile: Option[(String, String)] = {
+  def chooseAndLoadTextFile: Option[(String, Path)] = {
     val dialog = new FileDialog(null.asInstanceOf[FileDialog], "Load file", FileDialog.LOAD)
     dialog.setVisible(true)
     if (dialog.getFile == null) {
       None
     } else {
-      val path = dialog.getDirectory + dialog.getFile
+      val path = Paths.get(dialog.getDirectory, dialog.getFile)
 
-      loadTextFile(Source.fromFile(path, "UTF-8")) match {
+      loadTextFile(path) match {
         case Right(fileContents) => Some(fileContents, path)
         case Left(errorMessage) => {
           Dialog.showMessage(null, errorMessage)
@@ -99,9 +100,9 @@ package object fileHandling {
     }
   }
 
-  def saveTextFile(text: String, path: String): Boolean = {
+  def saveTextFile(text: String, path: Path): Boolean = {
     try {
-      alwaysClose(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"))) { writer =>
+      alwaysClose(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path.toString), "UTF-8"))) { writer =>
         // we always add a newline to the end of the saved file
         writer.write(text + '\n')
         return true
@@ -113,11 +114,11 @@ package object fileHandling {
     false
   }
 
-  def saveTextFileAs(text: String): Option[String] = {
+  def saveTextFileAs(text: String): Option[Path] = {
     val dialog = new FileDialog(null.asInstanceOf[FileDialog], "Save file", FileDialog.SAVE)
     dialog.setVisible(true)
     if (dialog.getFile != null) {
-      val path = dialog.getDirectory + dialog.getFile
+      val path = Paths.get(dialog.getDirectory, dialog.getFile)
       if (saveTextFile(text, path))
         return Some(path)
     }

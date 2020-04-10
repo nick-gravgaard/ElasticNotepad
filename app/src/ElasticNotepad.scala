@@ -2,6 +2,7 @@ import java.awt.{Canvas, Color, Dimension, Font, FontMetrics}
 import java.awt.Event.SHIFT_MASK
 import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S}
 import java.awt.Toolkit
+import java.nio.file.{Files, Path, Paths}
 
 import javax.swing.{KeyStroke, UIManager, WindowConstants}
 import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
@@ -18,6 +19,31 @@ import settings.{FontCC, Settings}
 import textPanes.{EditorTextPane, ElasticTextPane}
 
 object ElasticNotepad extends SimpleSwingApplication {
+
+  var maybePath: Option[Path] = None
+
+  override def startup(args: Array[String]) = {
+    maybePath = args.toList match {
+      case Nil => None
+      case pathText :: Nil => {
+        val path = Paths.get(pathText)
+        if (Files.exists(path)) {
+          Some(path)
+        } else {
+          println(s"""Error: file "$path" does not exist""")
+          System.exit(1)
+          None
+        }
+      }
+      case _ => {
+        println("Error: 0 or 1 argument (filename) expected")
+        System.exit(1)
+        None
+      }
+    }
+
+    super.startup(Array[String]())
+  }
 
   if (System.getProperty("os.name") == "Mac OS X") {
     System.setProperty("apple.laf.useScreenMenuBar", "true")
@@ -99,7 +125,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
       currentSettings.emptyColumnWidth, currentSettings.columnPadding,
       new Font(currentSettings.nonElasticFont.name, Font.PLAIN, currentSettings.nonElasticFont.size),
-      currentSettings.nonElasticTabSize, currentSettings.filesAreNonElastic, scratchFilePath.toString
+      currentSettings.nonElasticTabSize, currentSettings.filesAreNonElastic, maybePath
     ) {
       background = new Color(43, 43, 43)  // taken from Intellij IDEA
     }

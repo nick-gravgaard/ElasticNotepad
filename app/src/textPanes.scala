@@ -14,7 +14,7 @@ import scala.swing.event.{Key, KeyPressed}
 import BuildInfo.{appName, appVersion}
 
 import elasticTabstops.{split, splitAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
-import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs}
+import fileHandling.{chooseAndLoadTextFile, loadScratchFile, loadTextFile, saveTextFile, saveTextFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
 
 
@@ -264,10 +264,19 @@ package object textPanes {
 
   class EditorTextPane(_elasticFont: Font, _emptyColumnWidth: Double, _columnPadding: Double,
                        var nonElasticFont: Font, var nonElasticTabSize: Int, var filesAreNonElastic: Boolean,
-                       var currentPath: String)
+                       var maybePath: Option[Path])
     extends ElasticTextPane(_elasticFont, _emptyColumnWidth, _columnPadding) {
 
-    setNewText(if (filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
+    var (currentPath, fileContents) = maybePath match {
+      case None => {
+        (scratchFilePath, loadScratchFile())
+      }
+      case Some(path) => {
+        (path, loadTextFile(path).right.getOrElse(""))
+      }
+    }
+
+    setNewText(if (filesAreNonElastic) spacesToTabs(fileContents) else fileContents)
 
     private var _elastic = true
     def elastic = _elastic
@@ -322,12 +331,12 @@ package object textPanes {
     def updateWindowTitle(): Unit = {
       val frame = SwingUtilities.getWindowAncestor(peer).asInstanceOf[JFrame]
       if (frame != null)
-        frame.setTitle(s"${if (modified) "* " else ""}$currentPath - $appName v$appVersion")
+        frame.setTitle(s"${if (modified) "* " else ""}${currentPath.toString} - $appName v$appVersion")
     }
 
     def openScratchFile(scratchFilePath: Path, settings: Settings): Unit = {
-      if (currentPath != scratchFilePath.toString && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
-        currentPath = scratchFilePath.toString
+      if (currentPath != scratchFilePath && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
+        currentPath = scratchFilePath
         setNewText(if (settings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
       }
     }

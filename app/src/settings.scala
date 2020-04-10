@@ -79,11 +79,11 @@ package object settings {
               Failure(exception)
             }
           }
-          saveTextFile(defaultSettingsText, settingsFilePath.toString)
+          saveTextFile(defaultSettingsText, settingsFilePath)
           (defaults, defaultSettingsText)
         }
         case true => {
-          loadTextFile(Source.fromFile(settingsFilePath.toString, "UTF-8")) match {
+          loadTextFile(settingsFilePath) match {
             case Right(fileContents) => {
               (fromString(fileContents), fileContents)
             }
@@ -98,7 +98,7 @@ package object settings {
 
     def saveAndParse(text: String): Settings = {
       createAppDir
-      saveTextFile(text, settingsFilePath.toString)
+      saveTextFile(text, settingsFilePath)
       fromString(text)
     }
 
