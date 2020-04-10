@@ -73,13 +73,16 @@ package object elasticTabstops {
     }.toArray
   }
 
-  private def getPossCellsFromText(lines: Array[String]): Array[Array[Option[String]]] = {
+  private def getMatchesPerLine(lines: Array[String]): Array[Map[Int, String]] = {
     // a non-space followed by any number of chars that are either a non-space or a space followed by a non-space
     val cellTextRegEx = "[^ ](?:[^ ]| (?=[^ ]))*".r
 
     // get maps for each line containing the position of text and the text itself
-    val matchesPerLine = lines.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
+    lines.map(cellTextRegEx.findAllMatchIn(_).map(m => m.start -> m.matched).toMap)
+  }
 
+  private def getPossCellsFromText(lines: Array[String]): Array[Array[Option[String]]] = {
+    val matchesPerLine = getMatchesPerLine(lines)
     val positionsPerLine = matchesPerLine.map(_.keys)
     val lastPosPerLine = positionsPerLine.map(l => l.toList.maxOption.getOrElse(-1))
 
