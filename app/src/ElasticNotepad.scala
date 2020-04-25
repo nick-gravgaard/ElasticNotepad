@@ -1,6 +1,6 @@
 import java.awt.{Canvas, Color, Dimension, Font, FontMetrics}
 import java.awt.event.InputEvent.SHIFT_DOWN_MASK
-import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S}
+import java.awt.event.KeyEvent.{VK_N, VK_O, VK_Q, VK_S}
 import java.awt.Toolkit
 import java.nio.file.{Files, Path, Paths}
 
@@ -111,6 +111,14 @@ object ElasticNotepad extends SimpleSwingApplication {
       action
     }
 
+    def quitAction(): Action = {
+      val action = Action("Quit") {
+        closeOperation()
+      }
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_Q, shortcutKeyMask))
+      action
+    }
+
     menuBar = new MenuBar {
       contents += new Menu("File") {
         contents += new MenuItem(scratchFileAction)
@@ -118,6 +126,8 @@ object ElasticNotepad extends SimpleSwingApplication {
         contents += new Separator
         contents += new MenuItem(saveFileAction)
         contents += new MenuItem(saveFileAsAction)
+        contents += new Separator
+        contents += new MenuItem(quitAction)
       }
     }
 
