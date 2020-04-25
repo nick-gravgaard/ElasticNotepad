@@ -4,7 +4,7 @@ import mill.contrib.buildinfo.BuildInfo
 import mill._, scalalib._
 
 object app extends ScalaModule with BuildInfo {
-  def scalaVersion = "2.13.0"
+  def scalaVersion = "2.13.2"
 
   def appName = "Elastic Notepad"
   def appVersion = "1.5.0"
