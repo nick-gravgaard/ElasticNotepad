@@ -11,6 +11,8 @@ found in [elasticTabstops.scala](app/src/elasticTabstops.scala).
 
 ## Prerequisites
 
+This program requires Java 10 or later.
+
 The current version's settings default to using the fonts
 [Merriweather](https://fonts.google.com/specimen/Merriweather) and
 [Inconsolata](https://fonts.google.com/specimen/Inconsolata). If you don't have
