@@ -1,5 +1,5 @@
 import java.awt.{Canvas, Color, Dimension, Font, FontMetrics}
-import java.awt.Event.SHIFT_MASK
+import java.awt.event.InputEvent.SHIFT_DOWN_MASK
 import java.awt.event.KeyEvent.{VK_N, VK_O, VK_S}
 import java.awt.Toolkit
 import java.nio.file.{Files, Path, Paths}
@@ -107,7 +107,7 @@ object ElasticNotepad extends SimpleSwingApplication {
       val action = Action("Save as...") {
         textPane.saveFileAs(currentSettings)
       }
-      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, shortcutKeyMask | SHIFT_MASK))
+      action.accelerator = Some(KeyStroke.getKeyStroke(VK_S, shortcutKeyMask | SHIFT_DOWN_MASK))
       action
     }
 
