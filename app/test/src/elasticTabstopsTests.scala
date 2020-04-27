@@ -5,48 +5,64 @@ import elasticTabstops.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 
 class ElasticTabstopsSpec extends FlatSpec {
 
-  "Tabs" should "be replaced by spaces correctly" in {
+  "tabsToSpaces" should "replace tabs with spaces correctly" in {
     assert(tabsToSpaces("\ty", 4) == "    y")
     assert(tabsToSpaces("x\ty", 4) == "x   y")
     assert(tabsToSpaces("xxxxxxx\ty", 4) == "xxxxxxx  y")
-    assert(tabsToSpaces(List(
+
+    val given = List(
       "\ty",
       "xxxxxxx\ty"
-    ).mkString("\n"), 4) == List(
+    ).mkString("\n")
+
+    val expected = List(
       "         y",
       "xxxxxxx  y"
     ).mkString("\n")
-    )
-    assert(tabsToSpaces(List(
+
+    assert(tabsToSpaces(given, 4) == expected)
+
+    val given2 = List(
       "\t",
       "xxxxxxx"
-    ).mkString("\n"), 4) == List(
+    ).mkString("\n")
+
+    val expected2 = List(
       "",
       "xxxxxxx"
     ).mkString("\n")
-    )
+
+    assert(tabsToSpaces(given2, 4) == expected2)
   }
 
-  "Spaces" should "be replaced by tabs correctly" in {
+  "spacesToTabs" should "replace spaces with tabs correctly" in {
     assert(spacesToTabs("    y") == "\ty")
     assert(spacesToTabs("x   y") == "x\ty")
     assert(spacesToTabs("xxxxxxx  y") == "xxxxxxx\ty")
-    assert(spacesToTabs(List(
+
+    val given = List(
       "         y",
       "xxxxxxx  y"
-    ).mkString("\n")) == List(
+    ).mkString("\n")
+
+    val expected = List(
       "\ty",
       "xxxxxxx\ty"
     ).mkString("\n")
-    )
-    assert(spacesToTabs(List(
+
+    assert(spacesToTabs(given) == expected)
+
+    val given2 = List(
       "       ",
       "xxxxxxx"
-    ).mkString("\n")) == List(
+    ).mkString("\n")
+
+    val expected2 = List(
       "",
       "xxxxxxx"
     ).mkString("\n")
-    )
+
+    assert(spacesToTabs(given2) == expected2)
   }
 
 }
