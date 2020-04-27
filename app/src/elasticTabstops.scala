@@ -84,16 +84,16 @@ package object elasticTabstops {
   private def getPossCellsFromText(lines: Array[String]): Array[Array[Option[String]]] = {
     val matchesPerLine = getMatchesPerLine(lines)
     val positionsPerLine = matchesPerLine.map(_.keys)
-    val lastPosPerLine = positionsPerLine.map(l => l.toList.maxOption.getOrElse(-1))
+    val maybeLastPosPerLine = positionsPerLine.map(_.toList.maxOption)
 
     // get sorted and unique possible cell positions using the flattened positions as varargs
     val allPositions = SortedSet(positionsPerLine.flatten: _*).toArray
 
     // create Options at every possible cell position
     allPositions.map { pos =>
-      matchesPerLine.zip(lastPosPerLine).map { case (matchesThisLine, lastPosThisLine) =>
+      matchesPerLine.zip(maybeLastPosPerLine).map { case (matchesThisLine, maybeLastPosThisLine) =>
         if (matchesThisLine.contains(pos)) Some(matchesThisLine(pos))
-        else if (pos <= lastPosThisLine) Some("") else None
+        else maybeLastPosThisLine.flatMap(lastPosThisLine => if (pos <= lastPosThisLine) Some("") else None)
       }
     }
   }
