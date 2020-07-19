@@ -36,17 +36,21 @@ To run the jar file, use this:
 
 ## Changing it
 
-When developing, it can be run with:
+First, cd into wherever you cloned this project and download a mill bootstrap script (Linux/Mac only):
 
-	mill app.run
+    curl -L https://github.com/lihaoyi/mill/releases/download/0.7.4/0.7.4 > mill && chmod +x mill
+
+From then on, it can be run with:
+
+	./mill app.run
 
 If you are using IntelliJ IDEA, its project config files can be generated (and regenerated should the build definition change) with:
 
-	mill mill.scalalib.GenIdea/idea
+	./mill mill.scalalib.GenIdea/idea
 
 You can build a new jar file with:
 
-	mill clean && mill app.assembly
+	./mill clean && ./mill app.assembly
 
 ## Ugly font rendering?
 

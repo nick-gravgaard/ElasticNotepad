@@ -1,5 +1,4 @@
-//import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
-import $ivy.`com.lihaoyi::mill-contrib-buildinfo:0.5.0`
+import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import mill.contrib.buildinfo.BuildInfo
 import mill._, scalalib._
 
