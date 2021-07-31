@@ -29,3 +29,6 @@ project/plugins/project/
 # IntelliJ
 .idea
 *.iml
+
+# VS Code
+.vscode/
