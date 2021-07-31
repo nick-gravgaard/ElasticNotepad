@@ -35,14 +35,14 @@ package object textPanes {
       (emptyColumnWidthMinusPaddingPx, columnPaddingPx)
     }
 
-    var (emptyColumnWidthMinusPaddingPx, columnPaddingPx) = getPxVersionsOfEmSettings
+    var (emptyColumnWidthMinusPaddingPx, columnPaddingPx) = getPxVersionsOfEmSettings()
 
     def changeSettings(newElasticFont: Font, newEmptyColumnWidth: Double, newColumnPadding: Double): Unit = {
       elasticFont = newElasticFont
       emptyColumnWidth = newEmptyColumnWidth
       columnPadding = newColumnPadding
 
-      val pxSettings = getPxVersionsOfEmSettings
+      val pxSettings = getPxVersionsOfEmSettings()
       emptyColumnWidthMinusPaddingPx = pxSettings._1
       columnPaddingPx = pxSettings._2
 
@@ -156,7 +156,7 @@ package object textPanes {
       val cellsPerLine = textPerLine.map(splitAndStrip(_, '\t').toList)
       def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), emptyColumnWidthMinusPaddingPx) + columnPaddingPx
       for ((tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements)) {
-        val tabStops = tabstopPositionsThisLine.map(new TabStop(_))
+        val tabStops = tabstopPositionsThisLine.map(i => new TabStop(i.toFloat))
         val attributes = new SimpleAttributeSet()
         StyleConstants.setTabSet(attributes, new TabSet(tabStops.toArray))
         val length = element.getEndOffset - element.getStartOffset
@@ -169,7 +169,7 @@ package object textPanes {
       var fontMetrics = new Canvas().getFontMetrics(elasticFont)
 
       object ElasticTabstopsDocFilter extends DocumentFilter {
-        override def insertString(fb: FilterBypass, offset: Int, string: String, attributes: AttributeSet) {
+        override def insertString(fb: FilterBypass, offset: Int, string: String, attributes: AttributeSet) = {
           super.insertString(fb, offset, string, attributes)
           onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
@@ -178,7 +178,7 @@ package object textPanes {
           alignTabstops(Some(lineNum, nofLines))
         }
 
-        override def remove(fb: FilterBypass, offset: Int, length: Int) {
+        override def remove(fb: FilterBypass, offset: Int, length: Int) = {
           super.remove(fb, offset, length)
           onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
@@ -187,7 +187,7 @@ package object textPanes {
           alignTabstops(Some(lineNum, nofLines))
         }
 
-        override def replace(fb: FilterBypass, offset: Int, length: Int, string: String, attributes: AttributeSet) {
+        override def replace(fb: FilterBypass, offset: Int, length: Int, string: String, attributes: AttributeSet) = {
           super.replace(fb, offset, length, string, attributes)
           onChange()
           val doc = fb.getDocument.asInstanceOf[StyledDocument]
@@ -252,9 +252,9 @@ package object textPanes {
       case kp @ KeyPressed(_, Key.Z, _, _) => {
         if (kp.peer.isControlDown()) {
           if (kp.peer.isShiftDown()) {
-            redoAction.apply
+            redoAction().apply()
           } else {
-            undoAction.apply
+            undoAction().apply()
           }
         }
       }
@@ -272,7 +272,7 @@ package object textPanes {
         (scratchFilePath, loadScratchFile())
       }
       case Some(path) => {
-        (path, loadTextFile(path).right.getOrElse(""))
+        (path, loadTextFile(path).getOrElse(""))
       }
     }
 
@@ -280,7 +280,7 @@ package object textPanes {
 
     private var _elastic = true
     def elastic = _elastic
-    def elastic_=(newElastic: Boolean) {
+    def elastic_=(newElastic: Boolean) = {
       if (newElastic != _elastic) {
         _elastic = newElastic
         if (_elastic) {
@@ -306,7 +306,7 @@ package object textPanes {
       nonElasticFont = newNonElasticFont
       nonElasticTabSize = newNonElasticTabSize
 
-      val pxSettings = getPxVersionsOfEmSettings
+      val pxSettings = getPxVersionsOfEmSettings()
       emptyColumnWidthMinusPaddingPx = pxSettings._1
       columnPaddingPx = pxSettings._2
       if (_elastic) {
@@ -321,7 +321,7 @@ package object textPanes {
 
     private var _modified = false
     def modified = _modified
-    def modified_=(newModified: Boolean) {
+    def modified_=(newModified: Boolean) = {
       if (newModified != _modified) {
         _modified = newModified
         updateWindowTitle()
@@ -337,7 +337,7 @@ package object textPanes {
     def openScratchFile(scratchFilePath: Path, settings: Settings): Unit = {
       if (currentPath != scratchFilePath && (!modified || Dialog.showConfirmation(message = "There are unsaved changes. Are you sure you want to switch to the scratch file?") == Result.Ok)) {
         currentPath = scratchFilePath
-        setNewText(if (settings.filesAreNonElastic) spacesToTabs(loadScratchFile) else loadScratchFile)
+        setNewText(if (settings.filesAreNonElastic) spacesToTabs(loadScratchFile()) else loadScratchFile())
       }
     }
 

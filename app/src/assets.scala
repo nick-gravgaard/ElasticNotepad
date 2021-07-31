@@ -1,5 +1,5 @@
 package object assets {
-  val InitialText = StringContext.treatEscapes(
+  val InitialText = StringContext.processEscapes(
     """
       |
       |\t--------|\t--------------------------\t|--------

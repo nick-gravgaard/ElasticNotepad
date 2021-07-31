@@ -3,10 +3,9 @@ import java.awt.event.InputEvent.SHIFT_DOWN_MASK
 import java.awt.event.KeyEvent.{VK_N, VK_O, VK_Q, VK_S}
 import java.awt.Toolkit
 import java.nio.file.{Files, Path, Paths}
-
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import javax.swing.{KeyStroke, UIManager, WindowConstants}
 import javax.swing.undo.{CannotRedoException, CannotUndoException, UndoManager}
-
 import scala.swing.BorderPanel.Position.{Center, North}
 import scala.swing.Dialog.Result
 import scala.swing.event.ButtonClicked
@@ -66,7 +65,7 @@ object ElasticNotepad extends SimpleSwingApplication {
   UIManager.setLookAndFeel(new DarculaLaf)
 
   def scaleUiFonts(multiplier: Float) = {
-    UIManager.getLookAndFeelDefaults.keySet.forEach { key =>
+    UIManager.getLookAndFeelDefaults.keySet.asScala.foreach { key =>
       val keyName = key.toString
       if (keyName.endsWith(".font")) {
         val font = UIManager.getFont(keyName)
@@ -80,7 +79,7 @@ object ElasticNotepad extends SimpleSwingApplication {
 
   def top = new MainFrame {
     preferredSize = new Dimension(1536, 1024)
-    maximize
+    maximize()
 
     peer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
 
@@ -132,13 +131,13 @@ object ElasticNotepad extends SimpleSwingApplication {
 
     menuBar = new MenuBar {
       contents += new Menu("File") {
-        contents += new MenuItem(scratchFileAction)
-        contents += new MenuItem(loadFileAction)
+        contents += new MenuItem(scratchFileAction())
+        contents += new MenuItem(loadFileAction())
         contents += new Separator
-        contents += new MenuItem(saveFileAction)
-        contents += new MenuItem(saveFileAsAction)
+        contents += new MenuItem(saveFileAction())
+        contents += new MenuItem(saveFileAsAction())
         contents += new Separator
-        contents += new MenuItem(quitAction)
+        contents += new MenuItem(quitAction())
       }
     }
 
@@ -214,7 +213,7 @@ object ElasticNotepad extends SimpleSwingApplication {
         settingsTextPane.text = Settings.defaultSettingsText
     }
 
-    textPane.updateWindowTitle
+    textPane.updateWindowTitle()
   }
 
 }

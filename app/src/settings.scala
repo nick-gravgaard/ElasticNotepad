@@ -69,7 +69,7 @@ package object settings {
     }
 
     def load: (Settings, String) = {
-      createAppDir
+      createAppDir()
 
       Files.exists(settingsFilePath) match {
         case false => {
@@ -97,7 +97,7 @@ package object settings {
     }
 
     def saveAndParse(text: String): Settings = {
-      createAppDir
+      createAppDir()
       saveTextFile(text, settingsFilePath)
       fromString(text)
     }

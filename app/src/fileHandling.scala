@@ -2,10 +2,10 @@ import java.awt.FileDialog
 import java.io.{BufferedWriter, FileNotFoundException, FileOutputStream, IOException, OutputStreamWriter}
 import java.nio.file.{Files, Path, Paths}
 import scala.io.Source
+import scala.reflect.Selectable.reflectiveSelectable
 import scala.swing.Dialog
 import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
-
 
 package object fileHandling {
 
@@ -22,12 +22,12 @@ package object fileHandling {
       } catch {
         case NonFatal(e) =>
           println("Error closing resource:")
-          e.printStackTrace
+          e.printStackTrace()
       }
     }
   }
 
-  def createAppDir() = {
+  def createAppDir(): Unit = {
     if (!Files.exists(appDirPath)) {
       Try(Files.createDirectory(appDirPath)) recoverWith {
         case exception => {
@@ -39,7 +39,7 @@ package object fileHandling {
   }
 
   def loadScratchFile(): String = {
-    createAppDir
+    createAppDir()
 
     Files.exists(scratchFilePath) match {
       case false => {

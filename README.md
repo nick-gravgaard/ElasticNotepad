@@ -32,7 +32,7 @@ switch to a monospaced font and text doesn't *appear* lined up as a result.)
 
 To run the jar file, use this:
 
-	java -jar elastic-notepad.jar
+    java -jar elastic-notepad.jar
 
 ## Changing it
 
@@ -42,19 +42,19 @@ First, cd into wherever you cloned this project and download a mill bootstrap sc
 
 From then on, it can be run with:
 
-	./mill app.run
+    ./mill app.run
 
 If you are using IntelliJ IDEA, its project config files can be generated (and regenerated should the build definition change) with:
 
-	./mill mill.scalalib.GenIdea/idea
+    ./mill mill.scalalib.GenIdea/idea
 
 You can build a new jar file with:
 
-	./mill clean && ./mill app.assembly
+    ./mill clean && ./mill app.assembly
 
 ## Ugly font rendering?
 
 Some systems do a poor job of rendering fonts in Java GUIs. On my Linux system
 I've added the following line to `$HOME/.profile` to fix this:
 
-	export _JAVA_OPTIONS="$_JAVA_OPTIONS -Dawt.useSystemAAFontSettings=on"
+    export _JAVA_OPTIONS="$_JAVA_OPTIONS -Dawt.useSystemAAFontSettings=on"
