@@ -2,7 +2,6 @@
 *.log
 
 # mill
-mill
 out/*
 
 # sbt specific

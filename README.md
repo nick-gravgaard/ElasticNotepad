@@ -36,11 +36,7 @@ To run the jar file, use this:
 
 ## Changing it
 
-First, cd into wherever you cloned this project and download a mill bootstrap script (Linux/Mac only):
-
-    curl -L https://github.com/lihaoyi/mill/releases/download/0.7.4/0.7.4 > mill && chmod +x mill
-
-From then on, it can be run with:
+When developing, it can be run with:
 
     ./mill app.run
 
