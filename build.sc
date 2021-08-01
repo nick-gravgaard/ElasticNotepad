@@ -7,7 +7,7 @@ object app extends ScalaModule with BuildInfo {
   def scalaVersion = "3.0.0"
 
   def appName = "Elastic Notepad"
-  def appVersion = "1.5.2"
+  def appVersion = "1.6.0"
   val filename = "elastic-notepad.jar"
 
   override def buildInfoMembers: T[Map[String, String]] = T {
