@@ -2,7 +2,6 @@ import java.awt.FileDialog
 import java.io.{BufferedWriter, FileNotFoundException, FileOutputStream, IOException, OutputStreamWriter}
 import java.nio.file.{Files, Path, Paths}
 import scala.io.Source
-import scala.reflect.Selectable.reflectiveSelectable
 import scala.swing.Dialog
 import scala.util.{Failure, Try}
 import scala.util.control.NonFatal
@@ -12,20 +11,6 @@ package object fileHandling {
   val appDirPath: Path = Paths.get(s"${System.getProperty("user.home")}/.elastic-notepad")
   val scratchFilePath: Path = Paths.get(s"$appDirPath/scratch")
   val settingsFilePath: Path = Paths.get(s"$appDirPath/settings")
-
-  def alwaysClose[A <: {def close(): Unit}, B] (closeable: A) (f: A => B): B = {
-    try {
-      f(closeable)
-    } finally {
-      try {
-        closeable.close()
-      } catch {
-        case NonFatal(e) =>
-          println("Error closing resource:")
-          e.printStackTrace()
-      }
-    }
-  }
 
   def createAppDir(): Unit = {
     if (!Files.exists(appDirPath)) {
@@ -66,19 +51,22 @@ package object fileHandling {
     }
   }
 
-
   def loadTextFile(path: Path): Either[String, String] = {
-    val fileSource = Source.fromFile(path.toString, "UTF-8")
     try {
-      alwaysClose(fileSource) { handledFileSource =>
-        val text = handledFileSource.getLines.mkString("\n")
+      val fileSource = Source.fromFile(path.toString, "UTF-8")
+      try {
+        val text = fileSource.getLines.mkString("\n")
         // we don't include the last newline in the buffer's text
         Right(if (text.lastOption == Some('\n')) text.dropRight(1) else text)
+      } catch {
+        case e: IOException => Left(s"Can't load ${fileSource.descr}\n\n[${e.getMessage}]")
+        case NonFatal(e) => Left(s"Exception trying to load ${fileSource.descr}\n\n[${e.getMessage}]")
+      } finally {
+        fileSource.close()
       }
     } catch {
-      case e: FileNotFoundException => Left(s"Can't find ${fileSource.descr}\n\n[${e.getMessage}]")
-      case e: IOException => Left(s"Can't load ${fileSource.descr}\n\n[${e.getMessage}]")
-      case NonFatal(e) => Left(s"Exception trying to load ${fileSource.descr}\n\n[${e.getMessage}]")
+      case e: FileNotFoundException => Left(s"Can't find ${path}\n\n[${e.getMessage}]")
+      case NonFatal(e) => Left(s"Exception trying to find ${path}\n\n[${e.getMessage}]")
     }
   }
 
@@ -101,15 +89,16 @@ package object fileHandling {
   }
 
   def saveTextFile(text: String, path: Path): Boolean = {
+    val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path.toString), "UTF-8"))
     try {
-      alwaysClose(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path.toString), "UTF-8"))) { writer =>
-        // we always add a newline to the end of the saved file
-        writer.write(text + '\n')
-        return true
-      }
+      // we always add a newline to the end of the saved file
+      writer.write(text + '\n')
+      return true
     } catch {
       case e: IOException => Dialog.showMessage(null, s"Can't save $path\n[${e.getMessage}]")
       case NonFatal(e) => Dialog.showMessage(null, s"Exception trying to save $path\n[${e.getMessage}]")
+    } finally {
+      writer.close()
     }
     false
   }
