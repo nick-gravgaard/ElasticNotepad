@@ -11,17 +11,17 @@ found in [elasticTabstops.scala](app/src/elasticTabstops.scala).
 
 ## Prerequisites
 
-This program requires Java 10 or later.
+Since Elastic Notepad is written in Scala, you'll need to have Java installed to
+run it, specifically Java 10 or later.
 
 The current version's settings default to using the fonts
 [Merriweather](https://fonts.google.com/specimen/Merriweather) and
 [Inconsolata](https://fonts.google.com/specimen/Inconsolata). If you don't have
 them installed, your system's default Serif and Monospaced fonts will be used
-instead, and you can change Elastic Notepad's settings to use whatever fonts
-you like, but I recommend trying it with these fonts first.
-
-Since Elastic Notepad is written in Scala, you'll also need to have Java
-installed to run it, and sbt installed if you want to build it.
+instead. You can change Elastic Notepad's settings to use whatever fonts
+you like, but I recommend trying it with these fonts first. I've found this
+pairing to work well when you repeatedly switch between them (as you toggle
+elastic tabstops on and off).
 
 On Windows at least, if you install Java for the sake of running this, it seems
 you'll need to restart your system before Java can use logical fonts properly.
