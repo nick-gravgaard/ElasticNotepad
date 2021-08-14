@@ -1,4 +1,4 @@
-package object assets {
+package object assets:
   val InitialText = StringContext.processEscapes(
     """
       |
@@ -39,4 +39,3 @@ package object assets {
       |The Cyberiad\tStanislaw Lem\tHarcourt Publishers Ltd\t1985
       |The Selfish Gene\tRichard Dawkins\tOxford University Press\t2006""".stripMargin
   )
-}
