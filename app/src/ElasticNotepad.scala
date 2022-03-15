@@ -11,7 +11,7 @@ import scala.swing.Dialog.Result
 import scala.swing.event.ButtonClicked
 import scala.swing.FlowPanel.Alignment.Left
 import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, Orientation, ScrollPane, Separator, SimpleSwingApplication, ToggleButton}
-import com.bulenkov.darcula.DarculaLaf
+import com.formdev.flatlaf.FlatDarculaLaf
 import elasticTabstops.{spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs, scratchFilePath}
 import settings.{FontCC, Settings}
@@ -57,7 +57,7 @@ object ElasticNotepad extends SimpleSwingApplication:
 
   var (currentSettings, currentSettingsText) = Settings.load
 
-  UIManager.setLookAndFeel(new DarculaLaf)
+  UIManager.setLookAndFeel(new FlatDarculaLaf)
 
   def scaleUiFonts(multiplier: Float) =
     UIManager.getLookAndFeelDefaults.keySet.asScala.foreach { key =>
