@@ -22,14 +22,13 @@ object ElasticNotepad extends SimpleSwingApplication:
   var maybePath: Option[Path] = None
 
   override def startup(args: Array[String]) =
-
-    val java10OrLater = (for
+    val minimumJavaVersion = 14
+    val isCompatibleJavaVersion = (for
       javaVersion       <- Option(System.getProperty("java.version"))
       mainVersionNumber <- javaVersion.takeWhile(_.isDigit).toIntOption
-    yield mainVersionNumber >= 10).getOrElse(false)
-
-    if !java10OrLater then
-      println(s"""Error: This program requires Java 10 or later""")
+    yield mainVersionNumber >= minimumJavaVersion).getOrElse(false)
+    if !isCompatibleJavaVersion then
+      println(s"Error: This program requires Java $minimumJavaVersion or later")
       System.exit(1)
 
     maybePath = args.toList match

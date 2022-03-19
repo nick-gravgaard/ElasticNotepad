@@ -32,9 +32,7 @@ package object elasticTabstops:
 
   private def calcMaxedWidthsPerLine(widthsPerLine: List[List[Int]]): List[List[Int]] =
     val maxNofCells = widthsPerLine.map(_.length).max
-
     val widthsPerCol = (0 until maxNofCells).map(idx => widthsPerLine.map(_.dropRight(1).lift(idx)))
-
     widthsPerCol.map(maxAdjacent).toList.transpose.map(_.takeWhile(_.isDefined).flatten)
 
   private def measureWidthsPerLine(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] =
@@ -42,7 +40,6 @@ package object elasticTabstops:
 
   def calcTabstopPositions(cellsPerLine: List[List[String]], measureText: String => Int): List[List[Int]] =
     val cellWidthsPerLine = measureWidthsPerLine(cellsPerLine, measureText)
-
     calcMaxedWidthsPerLine(cellWidthsPerLine).map(_.scanLeft(0)(_ + _).drop(1))
 
   def tabsToSpaces(text: String, nofIndentSpaces: Int): String =

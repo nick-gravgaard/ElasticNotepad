@@ -12,7 +12,7 @@ found in [elasticTabstops.scala](app/src/elasticTabstops.scala).
 ## Prerequisites
 
 Since Elastic Notepad is written in Scala, you'll need to have Java installed to
-run it, specifically Java 10 or later.
+run it, specifically Java 14 or later.
 
 The current version's settings default to using the fonts
 [Merriweather](https://fonts.google.com/specimen/Merriweather) and

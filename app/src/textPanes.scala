@@ -180,12 +180,9 @@ package object textPanes:
     val doc = peer.getDocument
     doc.addUndoableEditListener((event: UndoableEditEvent) =>
       val edit = event.getEdit
-
-      // The following line no longer works in Java 9 and later
+      // The following line stopped working in Java 9 but was fixed in Java 14
       // see: https://bugs.openjdk.java.net/browse/JDK-8190763
-      //if (edit.isInstanceOf[DocumentEvent] && edit.asInstanceOf[DocumentEvent].getType != DocumentEvent.EventType.CHANGE)
-
-      if edit.getUndoPresentationName != "Undo style change" then
+      if edit.isInstanceOf[DocumentEvent] && edit.asInstanceOf[DocumentEvent].getType != DocumentEvent.EventType.CHANGE then
         // don't allow undoing of style changes (so we ignore tabstop changes)
         undoManager.addEdit(edit)
     )
