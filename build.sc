@@ -18,8 +18,8 @@ object app extends ScalaModule with BuildInfo {
   }
 
   override def unmanagedClasspath = T {
-    if (!ammonite.ops.exists(millSourcePath / "lib")) Agg()
-    else Agg.from(ammonite.ops.ls(millSourcePath / "lib").map(PathRef(_)))
+    if (!os.exists(millSourcePath / "lib")) Agg()
+    else Agg.from(os.list(millSourcePath / "lib").map(PathRef(_)))
   }
 
   override def assembly = T {
