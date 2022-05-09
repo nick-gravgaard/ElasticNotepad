@@ -11,10 +11,10 @@ import scala.swing.Dialog.Result
 import scala.swing.event.ButtonClicked
 import scala.swing.FlowPanel.Alignment.Left
 import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, MainFrame, Menu, MenuBar, MenuItem, Orientation, ScrollPane, Separator, SimpleSwingApplication, ToggleButton}
-import com.formdev.flatlaf.FlatDarculaLaf
+import com.formdev.flatlaf.{FlatDarculaLaf, FlatIntelliJLaf}
 import elasticTabstops.{spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs, scratchFilePath}
-import settings.{FontCC, Settings}
+import settings.{FontInfo, Settings, Theme}
 import textPanes.{EditorTextPane, ElasticTextPane}
 
 object ElasticNotepad extends SimpleSwingApplication:
@@ -56,7 +56,14 @@ object ElasticNotepad extends SimpleSwingApplication:
 
   var (currentSettings, currentSettingsText) = Settings.load
 
-  UIManager.setLookAndFeel(new FlatDarculaLaf)
+  def setLookAndFeel(theme: Theme) =
+    UIManager.setLookAndFeel(
+      theme match
+        case Theme.Light => new FlatIntelliJLaf
+        case Theme.Dark => new FlatDarculaLaf
+    )
+
+  setLookAndFeel(currentSettings.theme.value)
 
   def scaleUiFonts(multiplier: Float) =
     UIManager.getLookAndFeelDefaults.keySet.asScala.foreach { key =>
@@ -126,12 +133,13 @@ object ElasticNotepad extends SimpleSwingApplication:
         contents += new MenuItem(quitAction())
 
     val textPane = new EditorTextPane(
-      new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-      currentSettings.emptyColumnWidth, currentSettings.columnPadding,
-      new Font(currentSettings.nonElasticFont.name, Font.PLAIN, currentSettings.nonElasticFont.size),
-      currentSettings.nonElasticTabSize, currentSettings.filesAreNonElastic, maybePath
+      new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
+      currentSettings.emptyColumnWidth.value, currentSettings.columnPadding.value,
+      new Font(currentSettings.nonElasticFont.value.name, Font.PLAIN, currentSettings.nonElasticFont.value.size),
+      currentSettings.nonElasticTabSize.value, currentSettings.filesAreNonElastic.value, maybePath
     ):
-      background = new Color(43, 43, 43)  // taken from Intellij IDEA
+      if currentSettings.theme.value == Theme.Dark then
+        background = new Color(43, 43, 43)  // taken from Intellij IDEA
 
     val elasticToggle = new ToggleButton:
       text = "Elastic on"
@@ -141,8 +149,8 @@ object ElasticNotepad extends SimpleSwingApplication:
       selected = false
     val toolbarPanel = new FlowPanel(Left)(elasticToggle, settingsToggle)
     val settingsTextPane = new ElasticTextPane(
-      new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-      currentSettings.emptyColumnWidth, currentSettings.columnPadding
+      new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
+      currentSettings.emptyColumnWidth.value, currentSettings.columnPadding.value
     )
     settingsTextPane.setNewText(currentSettingsText)
 
@@ -182,14 +190,14 @@ object ElasticNotepad extends SimpleSwingApplication:
       case ButtonClicked(component) if component == saveAndApplySettingsButton => {
         currentSettings = Settings.saveAndParse(settingsTextPane.text)
         textPane.changeSettings(
-          new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-          currentSettings.emptyColumnWidth, currentSettings.columnPadding,
-          new Font(currentSettings.nonElasticFont.name, Font.PLAIN, currentSettings.nonElasticFont.size),
-          currentSettings.nonElasticTabSize
+          new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
+          currentSettings.emptyColumnWidth.value, currentSettings.columnPadding.value,
+          new Font(currentSettings.nonElasticFont.value.name, Font.PLAIN, currentSettings.nonElasticFont.value.size),
+          currentSettings.nonElasticTabSize.value
         )
         settingsTextPane.changeSettings(
-          new Font(currentSettings.elasticFont.name, Font.PLAIN, currentSettings.elasticFont.size),
-          currentSettings.emptyColumnWidth, currentSettings.columnPadding
+          new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
+          currentSettings.emptyColumnWidth.value, currentSettings.columnPadding.value
         )
       }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>

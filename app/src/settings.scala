@@ -8,61 +8,79 @@ import fileHandling.{createAppDir, loadTextFile, saveTextFile, settingsFilePath}
 
 package object settings:
 
-  case class FontCC(name: String, size: Int):
+  case class FontInfo(name: String, size: Int):
     override def toString: String = s""""${name}", ${size}"""
 
-  case class Settings(elasticFont: FontCC,
-                      nonElasticFont: FontCC,
-                      emptyColumnWidth: Double,
-                      columnPadding: Double,
-                      nonElasticTabSize: Int,
-                      filesAreNonElastic: Boolean)
+  enum Theme:
+    case Light, Dark
+  object Theme:
+    def fromString(s: String) =
+      s match
+        case "Light" => Light
+        case _ => Dark
+
+  case class SettingText(key: String, description: String)
+
+  case class Setting[A](value: A, text: SettingText):
+    override def toString: String = s"${text.key}:\t$value\t| ${text.description}"
+
+  case class Settings(
+    elasticFont: Setting[FontInfo],
+    nonElasticFont: Setting[FontInfo],
+    emptyColumnWidth: Setting[Double],
+    columnPadding: Setting[Double],
+    nonElasticTabSize: Setting[Int],
+    filesAreNonElastic: Setting[Boolean],
+    theme: Setting[Theme]
+  )
 
   object Settings:
     private val preferredElasticFonts = List(
-      FontCC("Merriweather", 22),
-      FontCC("Palatino", 25),
-      FontCC("Palatino Linotype", 25),
-      FontCC("URW Palladio L", 25),
-      FontCC("Georgia", 24)
+      FontInfo("Merriweather", 22),
+      FontInfo("Palatino", 25),
+      FontInfo("Palatino Linotype", 25),
+      FontInfo("URW Palladio L", 25),
+      FontInfo("Georgia", 24)
     )
     private val preferredNonElasticFonts = List(
-      FontCC("Inconsolata", 26),
-      FontCC("DejaVu Sans Mono", 23),
-      FontCC("Consolas", 23),
-      FontCC("Menlo", 23),
-      FontCC("Courier New", 24)
+      FontInfo("Inconsolata", 26),
+      FontInfo("DejaVu Sans Mono", 23),
+      FontInfo("Consolas", 23),
+      FontInfo("Menlo", 23),
+      FontInfo("Courier New", 24)
     )
 
-    private val fallbackElasticFont = FontCC("Serif", 24)
-    private val fallbackNonElasticFont = FontCC("Monospaced", 24)
+    private val fallbackElasticFont = FontInfo("Serif", 24)
+    private val fallbackNonElasticFont = FontInfo("Monospaced", 24)
 
     private val bestAvailableElasticFont = getBestAvailableFont(preferredElasticFonts, fallbackElasticFont)
     private val bestAvailableNonElasticFont = getBestAvailableFont(preferredNonElasticFonts, fallbackNonElasticFont)
 
-    def defaults = Settings(bestAvailableElasticFont, bestAvailableNonElasticFont, 1.8, 0.625, 4, true)
+    def defaults = Settings(
+      Setting[FontInfo](bestAvailableElasticFont, SettingText("Elastic font", "Used when elastic tabstops is on (can be proportional)")),
+      Setting[FontInfo](bestAvailableNonElasticFont, SettingText("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")),
+      Setting[Double](1.8, SettingText("Empty column width", "Measured in multiples of line height (ems)")),
+      Setting[Double](0.625, SettingText("Column padding", "Measured in multiples of line height (ems)")),
+      Setting[Int](4, SettingText("Non-elastic tab size", "The indent size in non-elastic files")),
+      Setting[Boolean](true, SettingText("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")),
+      Setting[Theme](Theme.Dark, SettingText("Theme", "\"Light\" or \"Dark\". Restart to see any change take effect"))
+    )
 
-    private val elasticFontText = ("Elastic font", "Used when elastic tabstops is on (can be proportional)")
-    private val nonElasticFontText = ("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")
-    private val emptyColumnWidthText = ("Empty column width", "Measured in multiples of line height (ems)")
-    private val columnPaddingText = ("Column padding", "Measured in multiples of line height (ems)")
-    private val nonElasticTabSizeText = ("Non-elastic tab size", "The indent size in non-elastic files")
-    private val filesAreNonElasticText = ("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")
-
-    def getBestAvailableFont(preferredFonts: List[FontCC], fallbackFont: FontCC): FontCC =
+    def getBestAvailableFont(preferredFonts: List[FontInfo], fallbackFont: FontInfo): FontInfo =
       val availableFontNames = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()
       preferredFonts.find(pf => availableFontNames.contains(pf.name)).getOrElse(fallbackFont)
 
     def defaultSettingsText: String =
       val cellsPerLine = List(
-        (defaults.elasticFont.toString, elasticFontText),
-        (defaults.nonElasticFont.toString, nonElasticFontText),
-        (defaults.emptyColumnWidth.toString, emptyColumnWidthText),
-        (defaults.columnPadding.toString, columnPaddingText),
-        (defaults.nonElasticTabSize.toString, nonElasticTabSizeText),
-        (defaults.filesAreNonElastic.toString, filesAreNonElasticText)
+        defaults.elasticFont.toString,
+        defaults.nonElasticFont.toString,
+        defaults.emptyColumnWidth.toString,
+        defaults.columnPadding.toString,
+        defaults.nonElasticTabSize.toString,
+        defaults.filesAreNonElastic.toString,
+        defaults.theme.toString
       )
-      cellsPerLine.map { case (value, (key, description)) => s"$key:\t$value\t| $description" }.mkString("\n")
+      cellsPerLine.map(_.toString).mkString("\n")
 
     def load: (Settings, String) =
       createAppDir()
@@ -99,13 +117,13 @@ package object settings:
       val fonts = g.getAvailableFontFamilyNames
       fonts contains fontName
 
-    def getFont(m: Map[String, String], key: String): FontCC =
-      val backupFont = if key == nonElasticFontText._1 then fallbackNonElasticFont else fallbackElasticFont
+    def getFont(m: Map[String, String], key: String): FontInfo =
+      val backupFont = if key == defaults.nonElasticFont.text.key then fallbackNonElasticFont else fallbackElasticFont
       m.get(key) match
         case Some(value) => {
           val parts = value.split(',')
           parts.length match
-            case 1 => FontCC(
+            case 1 => FontInfo(
               {
                 val fontName = parts(0).trim().stripPrefix("\"").stripSuffix("\"")
                 if checkFontExists(fontName) then fontName else backupFont.name
@@ -115,7 +133,7 @@ package object settings:
             case 2 => {
               val fontName = parts(0).trim().stripPrefix("\"").stripSuffix("\"")
               if checkFontExists(fontName) then
-                FontCC(fontName, Try(parts(1).trim().toInt).toOption.getOrElse(backupFont.size))
+                FontInfo(fontName, Try(parts(1).trim().toInt).toOption.getOrElse(backupFont.size))
               else
                 backupFont
             }
@@ -131,10 +149,42 @@ package object settings:
         key -> value
       }.toMap
       Settings(
-        getFont(m, elasticFontText._1),
-        getFont(m, nonElasticFontText._1),
-        m.get(emptyColumnWidthText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.emptyColumnWidth),
-        m.get(columnPaddingText._1).flatMap(i => Try(i.toDouble).toOption).getOrElse(defaults.columnPadding),
-        m.get(nonElasticTabSizeText._1).flatMap(i => Try(i.toInt).toOption).getOrElse(defaults.nonElasticTabSize),
-        m.get(filesAreNonElasticText._1).flatMap(i => Try(i.toBoolean).toOption).getOrElse(defaults.filesAreNonElastic)
+        Setting[FontInfo](
+          getFont(m, defaults.elasticFont.text.key),
+          defaults.elasticFont.text
+        ),
+        Setting[FontInfo](
+          getFont(m, defaults.nonElasticFont.text.key),
+          defaults.nonElasticFont.text
+        ),
+        Setting[Double](
+          m.get(defaults.emptyColumnWidth.text.key)
+            .flatMap(i => Try(i.toDouble).toOption)
+            .getOrElse(defaults.emptyColumnWidth.value),
+          defaults.emptyColumnWidth.text
+        ),
+        Setting[Double](
+          m.get(defaults.columnPadding.text.key)
+            .flatMap(i => Try(i.toDouble).toOption)
+            .getOrElse(defaults.columnPadding.value),
+          defaults.columnPadding.text
+        ),
+        Setting[Int](
+          m.get(defaults.nonElasticTabSize.text.key)
+            .flatMap(i => Try(i.toInt).toOption)
+            .getOrElse(defaults.nonElasticTabSize.value),
+          defaults.nonElasticTabSize.text
+        ),
+        Setting[Boolean](
+          m.get(defaults.filesAreNonElastic.text.key)
+            .flatMap(i => Try(i.toBoolean).toOption)
+            .getOrElse(defaults.filesAreNonElastic.value),
+          defaults.filesAreNonElastic.text
+        ),
+        Setting[Theme](
+          m.get(defaults.theme.text.key)
+            .flatMap(i => Try(Theme.fromString(i)).toOption)
+            .getOrElse(defaults.theme.value),
+          defaults.theme.text
+        )
       )

@@ -15,7 +15,7 @@ import BuildInfo.{appName, appVersion}
 
 import elasticTabstops.{split, splitAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadTextFile, loadScratchFile, loadTextFile, saveTextFile, saveTextFileAs, scratchFilePath}
-import settings.{FontCC, Settings}
+import settings.{FontInfo, Settings}
 
 package object textPanes:
 
@@ -290,23 +290,23 @@ package object textPanes:
       val msg = "There are unsaved changes. Are you sure you want to switch to the scratch file?"
       if currentPath != scratchFilePath && (!modified || Dialog.showConfirmation(message = msg) == Result.Ok) then
         currentPath = scratchFilePath
-        setNewText(if settings.filesAreNonElastic then spacesToTabs(loadScratchFile()) else loadScratchFile())
+        setNewText(if settings.filesAreNonElastic.value then spacesToTabs(loadScratchFile()) else loadScratchFile())
 
     def openFile(settings: Settings): Unit =
       val msg = "There are unsaved changes. Are you sure you want to open another file?"
       if !modified || Dialog.showConfirmation(message = msg) == Result.Ok then
         chooseAndLoadTextFile foreach { case (loadedText, path) =>
           currentPath = path
-          setNewText(if settings.filesAreNonElastic then spacesToTabs(loadedText) else loadedText)
+          setNewText(if settings.filesAreNonElastic.value then spacesToTabs(loadedText) else loadedText)
         }
 
     def saveFile(settings: Settings): Unit =
-      val textToSave = if settings.filesAreNonElastic then tabsToSpaces(text, settings.nonElasticTabSize) else text
+      val textToSave = if settings.filesAreNonElastic.value then tabsToSpaces(text, settings.nonElasticTabSize.value) else text
       saveTextFile(textToSave, currentPath)
       modified = false
 
     def saveFileAs(settings: Settings): Unit =
-      val textToSave = if settings.filesAreNonElastic then tabsToSpaces(text, settings.nonElasticTabSize) else text
+      val textToSave = if settings.filesAreNonElastic.value then tabsToSpaces(text, settings.nonElasticTabSize.value) else text
       saveTextFileAs(textToSave) foreach { path =>
         currentPath = path
         modified = false
