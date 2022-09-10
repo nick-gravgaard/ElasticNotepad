@@ -31,27 +31,28 @@ package object settings:
     columnPadding: Setting[Double],
     nonElasticTabSize: Setting[Int],
     filesAreNonElastic: Setting[Boolean],
-    theme: Setting[Theme]
+    theme: Setting[Theme],
+    scale: Setting[Float]
   )
 
   object Settings:
     private val preferredElasticFonts = List(
-      FontInfo("Merriweather", 22),
-      FontInfo("Palatino", 25),
-      FontInfo("Palatino Linotype", 25),
-      FontInfo("URW Palladio L", 25),
-      FontInfo("Georgia", 24)
+      FontInfo("Merriweather", 19),
+      FontInfo("Palatino", 20),
+      FontInfo("Palatino Linotype", 20),
+      FontInfo("URW Palladio L", 20),
+      FontInfo("Georgia", 20)
     )
     private val preferredNonElasticFonts = List(
-      FontInfo("Inconsolata", 26),
-      FontInfo("DejaVu Sans Mono", 23),
-      FontInfo("Consolas", 23),
-      FontInfo("Menlo", 23),
-      FontInfo("Courier New", 24)
+      FontInfo("Inconsolata", 23),
+      FontInfo("DejaVu Sans Mono", 20),
+      FontInfo("Consolas", 20),
+      FontInfo("Menlo", 20),
+      FontInfo("Courier New", 20)
     )
 
-    private val fallbackElasticFont = FontInfo("Serif", 24)
-    private val fallbackNonElasticFont = FontInfo("Monospaced", 24)
+    private val fallbackElasticFont = FontInfo("Serif", 20)
+    private val fallbackNonElasticFont = FontInfo("Monospaced", 20)
 
     private val bestAvailableElasticFont = getBestAvailableFont(preferredElasticFonts, fallbackElasticFont)
     private val bestAvailableNonElasticFont = getBestAvailableFont(preferredNonElasticFonts, fallbackNonElasticFont)
@@ -63,7 +64,8 @@ package object settings:
       Setting[Double](0.625, SettingText("Column padding", "Measured in multiples of line height (ems)")),
       Setting[Int](4, SettingText("Non-elastic tab size", "The indent size in non-elastic files")),
       Setting[Boolean](true, SettingText("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")),
-      Setting[Theme](Theme.Dark, SettingText("Theme", "\"Light\" or \"Dark\". Restart to see any change take effect"))
+      Setting[Theme](Theme.Dark, SettingText("Theme", "\"Light\" or \"Dark\". Restart to see any change take effect")),
+      Setting[Float](1.25, SettingText("Scale", "Multiplier to scale UI elements by. Restart to see any change take effect"))
     )
 
     def getBestAvailableFont(preferredFonts: List[FontInfo], fallbackFont: FontInfo): FontInfo =
@@ -78,7 +80,8 @@ package object settings:
         defaults.columnPadding.toString,
         defaults.nonElasticTabSize.toString,
         defaults.filesAreNonElastic.toString,
-        defaults.theme.toString
+        defaults.theme.toString,
+        defaults.scale.toString
       )
       cellsPerLine.map(_.toString).mkString("\n")
 
@@ -186,5 +189,11 @@ package object settings:
             .flatMap(i => Try(Theme.fromString(i)).toOption)
             .getOrElse(defaults.theme.value),
           defaults.theme.text
+        ),
+        Setting[Float] (
+          m.get (defaults.scale.text.key)
+            .flatMap(i => Try(i.toFloat).toOption)
+            .getOrElse(defaults.scale.value),
+          defaults.scale.text
         )
       )

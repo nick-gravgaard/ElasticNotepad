@@ -229,12 +229,10 @@ package object textPanes:
     extends ElasticTextPane(_elasticFont, _emptyColumnWidth, _columnPadding):
 
     var (currentPath, fileContents) = maybePath match
-      case None => {
+      case None =>
         (scratchFilePath, loadScratchFile())
-      }
-      case Some(path) => {
+      case Some(path) =>
         (path, loadTextFile(path).getOrElse(""))
-      }
 
     setNewText(if filesAreNonElastic then spacesToTabs(fileContents) else fileContents)
 

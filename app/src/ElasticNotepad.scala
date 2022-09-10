@@ -74,7 +74,7 @@ object ElasticNotepad extends SimpleSwingApplication:
         UIManager.put(keyName, biggerFont)
     }
 
-  scaleUiFonts(1.5f)
+  scaleUiFonts(currentSettings.scale.value)
 
   def top = new MainFrame:
     preferredSize = new Dimension(1536, 1024)
