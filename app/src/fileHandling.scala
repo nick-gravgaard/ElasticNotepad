@@ -15,36 +15,30 @@ package object fileHandling:
   def createAppDir(): Unit =
     if !Files.exists(appDirPath) then
       Try(Files.createDirectory(appDirPath)) recoverWith {
-        case exception => {
+        case exception =>
           Dialog.showMessage(null, exception.getMessage)
           Failure(exception)
-        }
       }
 
   def loadScratchFile(): String =
     createAppDir()
 
     Files.exists(scratchFilePath) match
-      case false => {
+      case false =>
         Try(Files.createFile(scratchFilePath)) recoverWith {
-          case exception => {
+          case exception =>
             Dialog.showMessage(null, exception.getMessage)
             Failure(exception)
-          }
         }
         saveTextFile(assets.InitialText, scratchFilePath)
         assets.InitialText
-      }
-      case true => {
+      case true =>
         loadTextFile(scratchFilePath) match
-          case Right(fileContents) => {
+          case Right(fileContents) =>
             fileContents
-          }
-          case Left(errorMessage) => {
+          case Left(errorMessage) =>
             Dialog.showMessage(null, errorMessage)
             assets.InitialText
-          }
-      }
 
   def loadTextFile(path: Path): Either[String, String] =
     try
@@ -72,10 +66,9 @@ package object fileHandling:
 
       loadTextFile(path) match
         case Right(fileContents) => Some(fileContents, path)
-        case Left(errorMessage) => {
+        case Left(errorMessage) =>
           Dialog.showMessage(null, errorMessage)
           None
-        }
 
   def saveTextFile(text: String, path: Path): Boolean =
     val writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path.toString), "UTF-8"))

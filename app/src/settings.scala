@@ -89,26 +89,21 @@ package object settings:
       createAppDir()
 
       Files.exists(settingsFilePath) match
-        case false => {
+        case false =>
           Try(Files.createFile(settingsFilePath)) recoverWith {
-            case exception => {
+            case exception =>
               Dialog.showMessage(null, exception.getMessage)
               Failure(exception)
-            }
           }
           saveTextFile(defaultSettingsText, settingsFilePath)
           (defaults, defaultSettingsText)
-        }
-        case true => {
+        case true =>
           loadTextFile(settingsFilePath) match
-            case Right(fileContents) => {
+            case Right(fileContents) =>
               (fromString(fileContents), fileContents)
-            }
-            case Left(errorMessage) => {
+            case Left(errorMessage) =>
               Dialog.showMessage(null, errorMessage)
               (defaults, defaultSettingsText)
-            }
-        }
 
     def saveAndParse(text: String): Settings =
       createAppDir()
@@ -123,7 +118,7 @@ package object settings:
     def getFont(m: Map[String, String], key: String): FontInfo =
       val backupFont = if key == defaults.nonElasticFont.text.key then fallbackNonElasticFont else fallbackElasticFont
       m.get(key) match
-        case Some(value) => {
+        case Some(value) =>
           val parts = value.split(',')
           parts.length match
             case 1 => FontInfo(
@@ -133,15 +128,13 @@ package object settings:
               },
               backupFont.size
             )
-            case 2 => {
+            case 2 =>
               val fontName = parts(0).trim().stripPrefix("\"").stripSuffix("\"")
               if checkFontExists(fontName) then
                 FontInfo(fontName, Try(parts(1).trim().toInt).toOption.getOrElse(backupFont.size))
               else
                 backupFont
-            }
             case _ => backupFont
-        }
         case None => backupFont
 
     def fromString(text: String): Settings =

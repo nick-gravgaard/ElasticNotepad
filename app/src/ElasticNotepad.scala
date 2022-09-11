@@ -33,7 +33,7 @@ object ElasticNotepad extends SimpleSwingApplication:
 
     maybePath = args.toList match
       case Nil => None
-      case pathText :: Nil => {
+      case pathText :: Nil =>
         val path = Paths.get(pathText)
         if Files.exists(path) then
           Some(path)
@@ -41,12 +41,10 @@ object ElasticNotepad extends SimpleSwingApplication:
           println(s"""Error: file "$path" does not exist""")
           System.exit(1)
           None
-      }
-      case _ => {
+      case _ =>
         println("Error: 0 or 1 argument (filename) expected")
         System.exit(1)
         None
-      }
 
     super.startup(Array[String]())
 

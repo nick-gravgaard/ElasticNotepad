@@ -16,11 +16,10 @@ package object elasticTabstops:
                                 (process: List[Option[A]] => List[Option[A]]): List[Option[A]] =
     unprocessed match
       case Nil => processed
-      case head :: _ => {
+      case head :: _ =>
         val (run, stillUnprocessed) = unprocessed.span(_.isDefined == head.isDefined)
         val newProcessed = if head.isDefined then process(run) else run
         processAdjacent(stillUnprocessed, processed ::: newProcessed)(process)
-      }
 
   // Replace each item in a run with its highest value.
   // scala>        maxAdjacent(List(Some(1), Some(2), None, Some(4), None, None, Some(7), Some(8), Some(9)))

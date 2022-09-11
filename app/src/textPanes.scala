@@ -75,15 +75,13 @@ package object textPanes:
                                          processed: List[(Char, Int)] = Nil): List[(Char, Int)] =
       unprocessed.headOption match
         case None => processed
-        case Some(charAndPos) => {
+        case Some(charAndPos) =>
           val (newCharAndPos, dropLength) = charAndPos match
-            case (char, pos) if char == ' ' || char == '\t' => {
+            case (char, pos) if char == ' ' || char == '\t' =>
               val run = unprocessed.takeWhile { case (c, _) => c == ' ' || c == '\t' }
               ((' ', pos), run.length)
-            }
             case nonWhitespaceCharAndPos => (nonWhitespaceCharAndPos, 1)
           minimiseMultipleWhitespace(unprocessed.drop(dropLength), processed :+ newCharAndPos)
-        }
 
     def setCaretsLineNumAndPos(lineNumAndPos: (Int, Int)): Unit =
       val (lineNum, minimalWhitespacePos) = lineNumAndPos
@@ -214,13 +212,12 @@ package object textPanes:
     listenTo(this.keys)
 
     reactions += {
-      case kp @ KeyPressed(_, Key.Z, _, _) => {
+      case kp @ KeyPressed(_, Key.Z, _, _) =>
         if kp.peer.isControlDown() then
           if kp.peer.isShiftDown() then
             redoAction().apply()
           else
             undoAction().apply()
-      }
     }
 
   class EditorTextPane(_elasticFont: Font, _emptyColumnWidth: Double, _columnPadding: Double,
