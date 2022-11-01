@@ -1,26 +1,26 @@
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 
 import elasticTabstops.{calcTabstopPositions, spacesToTabs, tabsToSpaces}
 
 
-class ElasticTabstopsSpec extends FlatSpec {
+class ElasticTabstopsSpec extends AnyFlatSpec {
 
   "tabsToSpaces" should "replace tabs with spaces correctly" in {
     assert(tabsToSpaces("\ty", 4) == "    y")
     assert(tabsToSpaces("x\ty", 4) == "x   y")
     assert(tabsToSpaces("xxxxxxx\ty", 4) == "xxxxxxx  y")
 
-    val given = List(
+    val given1 = List(
       "\ty",
       "xxxxxxx\ty"
     ).mkString("\n")
 
-    val expected = List(
+    val expected1 = List(
       "         y",
       "xxxxxxx  y"
     ).mkString("\n")
 
-    assert(tabsToSpaces(given, 4) == expected)
+    assert(tabsToSpaces(given1, 4) == expected1)
 
     val given2 = List(
       "\t",
@@ -40,17 +40,17 @@ class ElasticTabstopsSpec extends FlatSpec {
     assert(spacesToTabs("x   y") == "x\ty")
     assert(spacesToTabs("xxxxxxx  y") == "xxxxxxx\ty")
 
-    val given = List(
+    val given1 = List(
       "         y",
       "xxxxxxx  y"
     ).mkString("\n")
 
-    val expected = List(
+    val expected1 = List(
       "\ty",
       "xxxxxxx\ty"
     ).mkString("\n")
 
-    assert(spacesToTabs(given) == expected)
+    assert(spacesToTabs(given1) == expected1)
 
     val given2 = List(
       "       ",
