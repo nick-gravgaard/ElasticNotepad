@@ -1,10 +1,11 @@
 *.class
 *.log
 
-# mill
+# Mill
 out/*
+project/build.properties
 
-# sbt specific
+# SBT specific
 .cache
 .history
 .lib/
@@ -19,6 +20,9 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 
+# Bloop and Metals
+.bloop/
+.bsp/
 .metals/
 
 # ENSIME specific
