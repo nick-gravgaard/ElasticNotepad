@@ -36,7 +36,11 @@ To run the jar file, use this:
 
 ## Changing it
 
-When developing, it can be run with:
+When developing, if necessary, switch to Java 14 or later using Coursier:
+
+    eval "$(cs java --jvm 14 --env)"
+
+and then run it with:
 
     mill app.run
 

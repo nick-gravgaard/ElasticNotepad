@@ -23,22 +23,21 @@ package object fileHandling:
   def loadScratchFile(): String =
     createAppDir()
 
-    Files.exists(scratchFilePath) match
-      case false =>
-        Try(Files.createFile(scratchFilePath)) recoverWith {
-          case exception =>
-            Dialog.showMessage(null, exception.getMessage)
-            Failure(exception)
-        }
-        saveTextFile(assets.InitialText, scratchFilePath)
-        assets.InitialText
-      case true =>
-        loadTextFile(scratchFilePath) match
-          case Right(fileContents) =>
-            fileContents
-          case Left(errorMessage) =>
-            Dialog.showMessage(null, errorMessage)
-            assets.InitialText
+    if Files.exists(scratchFilePath) then
+      loadTextFile(scratchFilePath) match
+        case Right(fileContents) =>
+          fileContents
+        case Left(errorMessage) =>
+          Dialog.showMessage(null, errorMessage)
+          assets.InitialText
+    else
+      Try(Files.createFile(scratchFilePath)) recoverWith {
+        case exception =>
+          Dialog.showMessage(null, exception.getMessage)
+          Failure(exception)
+      }
+      saveTextFile(assets.InitialText, scratchFilePath)
+      assets.InitialText
 
   def loadTextFile(path: Path): Either[String, String] =
     try

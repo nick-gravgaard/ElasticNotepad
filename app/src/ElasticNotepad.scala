@@ -180,9 +180,7 @@ object ElasticNotepad extends SimpleSwingApplication:
     reactions += {
       case ButtonClicked(component) if component == elasticToggle =>
         textPane.elastic = elasticToggle.selected
-        elasticToggle.text = textPane.elastic match
-          case true => "Elastic on"
-          case false => "Elastic off"
+        elasticToggle.text = "Elastic " + (if textPane.elastic then "on" else "off")
       case ButtonClicked(component) if component == settingsToggle =>
         settingsPanel.visible = settingsToggle.selected
       case ButtonClicked(component) if component == saveAndApplySettingsButton => {

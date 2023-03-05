@@ -9,7 +9,7 @@ import fileHandling.{createAppDir, loadTextFile, saveTextFile, settingsFilePath}
 package object settings:
 
   case class FontInfo(name: String, size: Int):
-    override def toString: String = s""""${name}", ${size}"""
+    override def toString: String = s""""$name", $size"""
 
   enum Theme:
     case Light, Dark
@@ -25,14 +25,14 @@ package object settings:
     override def toString: String = s"${text.key}:\t$value\t| ${text.description}"
 
   case class Settings(
-    elasticFont: Setting[FontInfo],
-    nonElasticFont: Setting[FontInfo],
-    emptyColumnWidth: Setting[Double],
-    columnPadding: Setting[Double],
-    nonElasticTabSize: Setting[Int],
-    filesAreNonElastic: Setting[Boolean],
-    theme: Setting[Theme],
-    scale: Setting[Float]
+    elasticFont: Setting[FontInfo] = Setting[FontInfo](bestAvailableElasticFont, SettingText("Elastic font", "Used when elastic tabstops is on (can be proportional)")),
+    nonElasticFont: Setting[FontInfo] = Setting[FontInfo](bestAvailableNonElasticFont, SettingText("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")),
+    emptyColumnWidth: Setting[Double] = Setting[Double](1.8, SettingText("Empty column width", "Measured in multiples of line height (ems)")),
+    columnPadding: Setting[Double] = Setting[Double](0.625, SettingText("Column padding", "Measured in multiples of line height (ems)")),
+    nonElasticTabSize: Setting[Int] = Setting[Int](4, SettingText("Non-elastic tab size", "The indent size in non-elastic files")),
+    filesAreNonElastic: Setting[Boolean] = Setting[Boolean](true, SettingText("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")),
+    theme: Setting[Theme] = Setting[Theme](Theme.Dark, SettingText("Theme", "\"Light\" or \"Dark\". Restart to see any change take effect")),
+    scale: Setting[Float] = Setting[Float](1.25, SettingText("Scale", "Multiplier to scale UI elements by. Restart to see any change take effect"))
   )
 
   object Settings:
@@ -57,53 +57,37 @@ package object settings:
     private val bestAvailableElasticFont = getBestAvailableFont(preferredElasticFonts, fallbackElasticFont)
     private val bestAvailableNonElasticFont = getBestAvailableFont(preferredNonElasticFonts, fallbackNonElasticFont)
 
-    def defaults = Settings(
-      Setting[FontInfo](bestAvailableElasticFont, SettingText("Elastic font", "Used when elastic tabstops is on (can be proportional)")),
-      Setting[FontInfo](bestAvailableNonElasticFont, SettingText("Non-elastic font", "Used when elastic tabstops is off (monospaced is best)")),
-      Setting[Double](1.8, SettingText("Empty column width", "Measured in multiples of line height (ems)")),
-      Setting[Double](0.625, SettingText("Column padding", "Measured in multiples of line height (ems)")),
-      Setting[Int](4, SettingText("Non-elastic tab size", "The indent size in non-elastic files")),
-      Setting[Boolean](true, SettingText("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")),
-      Setting[Theme](Theme.Dark, SettingText("Theme", "\"Light\" or \"Dark\". Restart to see any change take effect")),
-      Setting[Float](1.25, SettingText("Scale", "Multiplier to scale UI elements by. Restart to see any change take effect"))
-    )
+    val defaults = Settings()
 
     def getBestAvailableFont(preferredFonts: List[FontInfo], fallbackFont: FontInfo): FontInfo =
       val availableFontNames = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()
       preferredFonts.find(pf => availableFontNames.contains(pf.name)).getOrElse(fallbackFont)
 
+    val defaultSettingsComment = "# Default settings (delete leading '>' to activate)\n"
+    val missingSettingsComment = "# The following settings are missing (delete leading '>' to activate)\n"
+
     def defaultSettingsText: String =
-      val cellsPerLine = List(
-        defaults.elasticFont.toString,
-        defaults.nonElasticFont.toString,
-        defaults.emptyColumnWidth.toString,
-        defaults.columnPadding.toString,
-        defaults.nonElasticTabSize.toString,
-        defaults.filesAreNonElastic.toString,
-        defaults.theme.toString,
-        defaults.scale.toString
-      )
-      cellsPerLine.map(_.toString).mkString("\n")
+      defaultSettingsComment + defaults.productIterator.map(">" + _.toString + "\n").mkString
 
     def load: (Settings, String) =
       createAppDir()
 
-      Files.exists(settingsFilePath) match
-        case false =>
-          Try(Files.createFile(settingsFilePath)) recoverWith {
-            case exception =>
-              Dialog.showMessage(null, exception.getMessage)
-              Failure(exception)
-          }
-          saveTextFile(defaultSettingsText, settingsFilePath)
-          (defaults, defaultSettingsText)
-        case true =>
-          loadTextFile(settingsFilePath) match
-            case Right(fileContents) =>
-              (fromString(fileContents), fileContents)
-            case Left(errorMessage) =>
-              Dialog.showMessage(null, errorMessage)
-              (defaults, defaultSettingsText)
+      if Files.exists(settingsFilePath) then
+        loadTextFile(settingsFilePath) match
+          case Right(fileContents) =>
+            val updatedFileContents = addMissingSettingsToText(fileContents)
+            (fromString(updatedFileContents), updatedFileContents)
+          case Left(errorMessage) =>
+            Dialog.showMessage(null, errorMessage)
+            (defaults, defaultSettingsText)
+      else
+        Try(Files.createFile(settingsFilePath)) recoverWith {
+          case exception =>
+            Dialog.showMessage(null, exception.getMessage)
+            Failure(exception)
+        }
+        saveTextFile(defaultSettingsText, settingsFilePath)
+        (defaults, defaultSettingsText)
 
     def saveAndParse(text: String): Settings =
       createAppDir()
@@ -137,13 +121,28 @@ package object settings:
             case _ => backupFont
         case None => backupFont
 
+    def textToMaps(text: String): (Map[String, String], Map[String, String]) =
+      val (active, inactive) = text.split('\n').toList
+        .map(_.takeWhile(c => (c != '#') && (c != '|')))
+        .map{_.span(_ != ':')}
+        .collect { case (key, rest) if rest.length > 0 => (key.trim, rest.trim) }
+        .partition {_._1.headOption != Some('>')}
+      (active.toMap, inactive.toMap)
+
+    def addMissingSettingsToText(text: String): String =
+      val (active, inactive) = textToMaps(text)
+      val missingSettings = defaults.productIterator.collect {
+        case s: Setting[_] if !active.contains(s.text.key) && !inactive.contains(">" + s.text.key) => s">${s.toString}"
+      }.toList
+      val leadingNewlines = if text.length == 0 then "" else "\n\n"
+      text +
+        (if missingSettings.length > 0 then
+          leadingNewlines + missingSettingsComment + missingSettings.map(_ + "\n").mkString
+        else
+          "")
+
     def fromString(text: String): Settings =
-      val m = text.split('\n').map { line =>
-        val parts = line.take(line.indexOf('|')).split(':')
-        val key = parts(0).trim
-        val value = parts(1).trim
-        key -> value
-      }.toMap
+      val (m, _) = textToMaps(text)
       Settings(
         Setting[FontInfo](
           getFont(m, defaults.elasticFont.text.key),
