@@ -30,9 +30,9 @@ package object settings:
     emptyColumnWidth: Setting[Double] = Setting[Double](1.8, SettingText("Empty column width", "Measured in multiples of line height (ems)")),
     columnPadding: Setting[Double] = Setting[Double](0.625, SettingText("Column padding", "Measured in multiples of line height (ems)")),
     nonElasticTabSize: Setting[Int] = Setting[Int](4, SettingText("Non-elastic tab size", "The indent size in non-elastic files")),
-    filesAreNonElastic: Setting[Boolean] = Setting[Boolean](true, SettingText("Files on disk are non-elastic", "Convert to elastic tabstops when loading (and save as non-elastic)")),
-    theme: Setting[Theme] = Setting[Theme](Theme.Dark, SettingText("Theme", "\"Light\" or \"Dark\". Restart to see any change take effect")),
-    scale: Setting[Float] = Setting[Float](1.25, SettingText("Scale", "Multiplier to scale UI elements by. Restart to see any change take effect"))
+    filesAreNonElastic: Setting[Boolean] = Setting[Boolean](true, SettingText("Files on disk are non-elastic", "Convert to elastic tabstops on load, save as non-elastic")),
+    theme: Setting[Theme] = Setting[Theme](Theme.Dark, SettingText("Theme", "\"Light\" or \"Dark\". Restart to take effect")),
+    scale: Setting[Float] = Setting[Float](1.25, SettingText("Scale", "Multiplier to scale UI elements by. Restart to take effect"))
   )
 
   object Settings:
@@ -63,11 +63,14 @@ package object settings:
       val availableFontNames = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()
       preferredFonts.find(pf => availableFontNames.contains(pf.name)).getOrElse(fallbackFont)
 
-    val defaultSettingsComment = "# Default settings (delete leading '>' to activate)\n"
-    val missingSettingsComment = "# The following settings are missing (delete leading '>' to activate)\n"
+    val defaultSettingsComment = "# Default settings (delete leading '>' to override)\n"
+    val missingSettingsComment = "# The following settings are missing (delete leading '>' to override)\n"
 
     def defaultSettingsText: String =
       defaultSettingsComment + defaults.productIterator.map(">" + _.toString + "\n").mkString
+
+    def removeTrailingNewline(text: String): String =
+      if text.lastOption == Some('\n') then text.dropRight(1) else text
 
     def load: (Settings, String) =
       createAppDir()

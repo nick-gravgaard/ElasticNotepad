@@ -14,6 +14,7 @@ import scala.swing.{Action, BorderPanel, BoxPanel, Button, Dialog, FlowPanel, Ma
 import com.formdev.flatlaf.{FlatDarculaLaf, FlatIntelliJLaf}
 import elasticTabstops.{spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadTextFile, loadScratchFile, saveTextFile, saveTextFileAs, scratchFilePath}
+import settings.Settings.removeTrailingNewline
 import settings.{FontInfo, Settings, Theme}
 import textPanes.{EditorTextPane, ElasticTextPane}
 
@@ -150,7 +151,7 @@ object ElasticNotepad extends SimpleSwingApplication:
       new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
       currentSettings.emptyColumnWidth.value, currentSettings.columnPadding.value
     )
-    settingsTextPane.setNewText(currentSettingsText)
+    settingsTextPane.setNewText(removeTrailingNewline(currentSettingsText))
 
     val saveAndApplySettingsButton = new Button("Save and apply")
     val revertToDefaultSettingsButton = new Button("Revert to defaults")
@@ -184,7 +185,7 @@ object ElasticNotepad extends SimpleSwingApplication:
       case ButtonClicked(component) if component == settingsToggle =>
         settingsPanel.visible = settingsToggle.selected
       case ButtonClicked(component) if component == saveAndApplySettingsButton => {
-        currentSettings = Settings.saveAndParse(settingsTextPane.text)
+        currentSettings = Settings.saveAndParse(settingsTextPane.text + '\n')
         textPane.changeSettings(
           new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
           currentSettings.emptyColumnWidth.value, currentSettings.columnPadding.value,
@@ -197,7 +198,7 @@ object ElasticNotepad extends SimpleSwingApplication:
         )
       }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>
-        settingsTextPane.text = Settings.defaultSettingsText
+        settingsTextPane.text = removeTrailingNewline(Settings.defaultSettingsText)
     }
 
     textPane.updateWindowTitle()
