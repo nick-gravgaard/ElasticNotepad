@@ -123,13 +123,15 @@ object ElasticNotepad extends SimpleSwingApplication:
 
     menuBar = new MenuBar:
       contents += new Menu("File"):
-        contents += new MenuItem(scratchFileAction())
-        contents += new MenuItem(loadFileAction())
-        contents += new Separator
-        contents += new MenuItem(saveFileAction())
-        contents += new MenuItem(saveFileAsAction())
-        contents += new Separator
-        contents += new MenuItem(quitAction())
+        contents ++= List(
+          new MenuItem(scratchFileAction()),
+          new MenuItem(loadFileAction()),
+          new Separator,
+          new MenuItem(saveFileAction()),
+          new MenuItem(saveFileAsAction()),
+          new Separator,
+          new MenuItem(quitAction())
+        )
 
     val textPane = new EditorTextPane(
       new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
@@ -159,13 +161,11 @@ object ElasticNotepad extends SimpleSwingApplication:
 
     val settingsPanel = new BoxPanel(Orientation.Vertical):
       visible = false
-      contents += new Separator
-      contents += settingsTextPane
-      contents += settingsToolbarPanel
+      contents ++= List(new Separator, settingsTextPane, settingsToolbarPanel)
 
     val toolbarAndSettingsPanel = new BoxPanel(Orientation.Vertical):
-      contents += toolbarPanel
-      contents += settingsPanel
+      contents ++= List(toolbarPanel, settingsPanel)
+
     val scrollPane = new ScrollPane(textPane)
     scrollPane.verticalScrollBar.unitIncrement = 8
 
@@ -184,7 +184,7 @@ object ElasticNotepad extends SimpleSwingApplication:
         elasticToggle.text = "Elastic " + (if textPane.elastic then "on" else "off")
       case ButtonClicked(component) if component == settingsToggle =>
         settingsPanel.visible = settingsToggle.selected
-      case ButtonClicked(component) if component == saveAndApplySettingsButton => {
+      case ButtonClicked(component) if component == saveAndApplySettingsButton =>
         currentSettings = Settings.saveAndParse(settingsTextPane.text + '\n')
         textPane.changeSettings(
           new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
@@ -196,7 +196,6 @@ object ElasticNotepad extends SimpleSwingApplication:
           new Font(currentSettings.elasticFont.value.name, Font.PLAIN, currentSettings.elasticFont.value.size),
           currentSettings.emptyColumnWidth.value, currentSettings.columnPadding.value
         )
-      }
       case ButtonClicked(component) if component == revertToDefaultSettingsButton =>
         settingsTextPane.text = removeTrailingNewline(Settings.defaultSettingsText)
     }
