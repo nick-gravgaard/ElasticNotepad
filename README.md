@@ -44,6 +44,10 @@ and then run it with:
 
     mill app.run
 
+and run the tests with:
+
+    mill app.test
+
 If you are using IntelliJ IDEA, its project config files can be generated (and regenerated should the build definition change) with:
 
     mill mill.scalalib.GenIdea/idea
