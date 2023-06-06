@@ -14,7 +14,7 @@ package object settings:
   enum Theme:
     case Light, Dark
   object Theme:
-    def fromString(s: String) =
+    def fromString(s: String): Theme =
       s match
         case "Light" => Light
         case _ => Dark
@@ -57,10 +57,10 @@ package object settings:
     private val bestAvailableElasticFont = getBestAvailableFont(preferredElasticFonts, fallbackElasticFont)
     private val bestAvailableNonElasticFont = getBestAvailableFont(preferredNonElasticFonts, fallbackNonElasticFont)
 
-    val defaults = Settings()
+    val defaults: Settings = Settings()
 
     def getBestAvailableFont(preferredFonts: List[FontInfo], fallbackFont: FontInfo): FontInfo =
-      val availableFontNames = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()
+      val availableFontNames = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment.getAvailableFontFamilyNames()
       preferredFonts.find(pf => availableFontNames.contains(pf.name)).getOrElse(fallbackFont)
 
     val defaultSettingsComment = "# Default settings (delete leading '>' to override)\n"
@@ -70,7 +70,7 @@ package object settings:
       defaultSettingsComment + defaults.productIterator.map(">" + _.toString + "\n").mkString
 
     def removeTrailingNewline(text: String): String =
-      if text.lastOption == Some('\n') then text.dropRight(1) else text
+      if text.lastOption.contains('\n') then text.dropRight(1) else text
 
     def load: (Settings, String) =
       createAppDir()
@@ -103,44 +103,40 @@ package object settings:
       fonts contains fontName
 
     def getFont(m: Map[String, String], key: String): FontInfo =
-      val backupFont = if key == defaults.nonElasticFont.text.key then fallbackNonElasticFont else fallbackElasticFont
+      val backupFont = if key == defaults.nonElasticFont.text.key then bestAvailableNonElasticFont else bestAvailableElasticFont
       m.get(key) match
         case Some(value) =>
           val parts = value.split(',')
-          parts.length match
-            case 1 => FontInfo(
-              {
-                val fontName = parts(0).trim().stripPrefix("\"").stripSuffix("\"")
-                if checkFontExists(fontName) then fontName else backupFont.name
-              },
-              backupFont.size
-            )
-            case 2 =>
-              val fontName = parts(0).trim().stripPrefix("\"").stripSuffix("\"")
-              if checkFontExists(fontName) then
-                FontInfo(fontName, Try(parts(1).trim().toInt).toOption.getOrElse(backupFont.size))
-              else
-                backupFont
-            case _ => backupFont
+          val fontName = parts.headOption
+            .flatMap(fn =>
+              val strippedFontName: String = fn.strip.stripPrefix("\"").stripSuffix("\"")
+              Option.when(checkFontExists(strippedFontName))(strippedFontName))
+            .getOrElse(backupFont.name)
+          val fontSize = parts.lift(1)
+            .flatMap(fs => Try(fs.strip.toInt).toOption)
+            .getOrElse(backupFont.size)
+          FontInfo(fontName, fontSize)
         case None => backupFont
 
     def textToMaps(text: String): (Map[String, String], Map[String, String]) =
       val (active, inactive) = text.split('\n').toList
         .map(_.takeWhile(c => (c != '#') && (c != '|')))
-        .map{_.span(_ != ':')}
-        .collect { case (key, rest) if rest.length > 0 => (key.trim, rest.trim) }
-        .partition {_._1.headOption != Some('>')}
-      (active.toMap, inactive.toMap)
+        .map(_.strip)
+        .filter(_.nonEmpty)
+        .map(_.span(_ != ':'))
+        .map { case (key, rest) => (key.stripTrailing, rest.stripPrefix(":").stripLeading) }
+        .partition { !_._1.headOption.contains('>') }
+      (active.toMap, inactive.map(kv => (kv._1.stripPrefix(">").stripLeading, kv._2)).toMap)
 
     def addMissingSettingsToText(text: String): String =
       val (active, inactive) = textToMaps(text)
       val missingSettings = defaults.productIterator.collect {
-        case s: Setting[_] if !active.contains(s.text.key) && !inactive.contains(">" + s.text.key) => s">${s.toString}"
+        case s: Setting[_] if !active.contains(s.text.key) && !inactive.contains(s.text.key) => s">${s.toString}"
       }.toList
-      val leadingNewlines = if text.length == 0 then "" else "\n\n"
-      text +
-        (if missingSettings.length > 0 then
-          leadingNewlines + missingSettingsComment + missingSettings.map(_ + "\n").mkString
+      val leadingNewlines = if text.isEmpty then "" else "\n\n"
+      text.strip +
+        (if missingSettings.nonEmpty then
+          leadingNewlines + missingSettingsComment + missingSettings.map(_ + '\n').mkString
         else
           "")
 

@@ -45,7 +45,7 @@ package object fileHandling:
       try
         val text = fileSource.getLines.mkString("\n")
         // we don't include the last newline in the buffer's text
-        Right(if text.lastOption == Some('\n') then text.dropRight(1) else text)
+        Right(if text.lastOption.contains('\n') then text.dropRight(1) else text)
       catch
         case e: IOException => Left(s"Can't load ${fileSource.descr}\n\n[${e.getMessage}]")
         case NonFatal(e) => Left(s"Exception trying to load ${fileSource.descr}\n\n[${e.getMessage}]")
