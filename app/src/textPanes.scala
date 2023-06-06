@@ -13,7 +13,7 @@ import scala.swing.event.{Key, KeyPressed}
 
 import BuildInfo.{appName, appVersion}
 
-import elasticTabstops.{split, splitAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
+import elasticTabstops.{splitByNewline, splitByTabAndStrip, calcTabstopPositions, spacesToTabs, tabsToSpaces}
 import fileHandling.{chooseAndLoadTextFile, loadScratchFile, loadTextFile, saveTextFile, saveTextFileAs, scratchFilePath}
 import settings.{FontInfo, Settings}
 
@@ -87,7 +87,7 @@ package object textPanes:
       val (lineNum, minimalWhitespacePos) = lineNumAndPos
       val root = peer.getDocument.getDefaultRootElement
       val startOfLineOffset = root.getElement(lineNum).getStartOffset
-      val indexedLineText = split(this.text, '\n').drop(lineNum).take(1).flatten.zipWithIndex
+      val indexedLineText = splitByNewline(this.text).drop(lineNum).take(1).flatten.zipWithIndex
       val minimalWhitespaceOnly = minimiseMultipleWhitespace(indexedLineText.toList)
       val pos = minimalWhitespaceOnly.lift(minimalWhitespacePos) match
         case Some((_, pos)) => pos
@@ -135,7 +135,7 @@ package object textPanes:
 
       val elements = allElements.drop(recalcStart).take(recalcLength)
       val textPerLine = elements.map(el => doc.getText(el.getStartOffset, el.getEndOffset - el.getStartOffset))
-      val cellsPerLine = textPerLine.map(splitAndStrip(_, '\t').toList)
+      val cellsPerLine = textPerLine.map(splitByTabAndStrip(_).toList)
       def calcCellWidth(text: String): Int = math.max(fm.stringWidth(text), emptyColumnWidthMinusPaddingPx) + columnPaddingPx
       for (tabstopPositionsThisLine, element) <- calcTabstopPositions(cellsPerLine, calcCellWidth).zip(elements) do
         val tabStops = tabstopPositionsThisLine.map(i => new TabStop(i.toFloat))

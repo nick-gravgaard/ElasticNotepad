@@ -4,8 +4,8 @@ import scala.collection.SortedSet
 package object elasticTabstops:
 
   // convenience functions to wrap Java's unintuitive split method
-  def split(string: String, char: Char) = string.split(char.toString, -1)  // -1 so we get trailing empty strings
-  def splitAndStrip(string: String, char: Char) = string.split(char)
+  def splitByNewline(string: String) = string.split("\n", -1)  // -1 so we get trailing empty lines
+  def splitByTabAndStrip(string: String) = string.split('\t')
 
   // Process runs of Some in list.
   // scala>    processAdjacent((l: List[Option[Int]]) => List.fill(l.length)(Some(l.flatten.max)),
@@ -44,7 +44,7 @@ package object elasticTabstops:
   def tabsToSpaces(text: String, nofIndentSpaces: Int): String =
     val cellPaddingWidthSpaces = 2  // must be at least 2 so we can convert back to tabs
     val cellMinimumWidthSpaces = nofIndentSpaces - cellPaddingWidthSpaces
-    val cellsPerLine = split(text, '\n').map(splitAndStrip(_, '\t').toList).toList
+    val cellsPerLine = splitByNewline(text).map(splitByTabAndStrip(_).toList).toList
     def calcCellWidth(text: String): Int = math.max(text.length, cellMinimumWidthSpaces) + cellPaddingWidthSpaces
     val maxedWidthsPerLine = calcMaxedWidthsPerLine(measureWidthsPerLine(cellsPerLine, calcCellWidth))
 
@@ -87,7 +87,7 @@ package object elasticTabstops:
 
   def spacesToTabs(text: String): String =
     // split text into lines prepended with a non-whitespace character (so the first cell of each line is not empty)
-    val lines = split(text, '\n').map("|" + _)
+    val lines = splitByNewline(text).map("|" + _)
 
     val possCellsPerCol = getPossCellsFromText(lines)
 
