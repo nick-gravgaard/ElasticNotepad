@@ -33,6 +33,36 @@ class ElasticTabstopsSpec extends AnyFlatSpec {
     ).mkString("\n")
 
     assert(tabsToSpaces(given2, 4) == expected2)
+
+    // diagonal down
+    val given3 = List(
+      "aa\tdddd",
+      "bbbbbbb\t\thhhhh",
+      "cccccccccccc\t\t\tlll"
+    ).mkString("\n")
+
+    val expected3 = List(
+      "aa            dddd",
+      "bbbbbbb           hhhhh",
+      "cccccccccccc          lll"
+    ).mkString("\n")
+
+    assert(tabsToSpaces(given3, 4) == expected3)
+
+    // diagonal up
+    val given4 = List(
+      "aa\t\t\tjjj",
+      "bbbbbbb\t\thhhhh",
+      "cccccccccccc\tffffffff"
+    ).mkString("\n")
+
+    val expected4 = List(
+      "aa                    jjj",
+      "bbbbbbb           hhhhh",
+      "cccccccccccc  ffffffff"
+    ).mkString("\n")
+
+    assert(tabsToSpaces(given4, 4) == expected4)
   }
 
   "spacesToTabs" should "replace spaces with tabs correctly" in {
